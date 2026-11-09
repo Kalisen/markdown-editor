@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\Plugin.targets" />
+  <ItemGroup>
+    <InternalsVisibleTo Include="MarkdownEditor.Plugin.Footnotes.Tests" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="assets\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

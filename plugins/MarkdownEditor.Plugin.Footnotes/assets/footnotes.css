@@ -1,0 +1,5 @@
+.markdown-body .footnotes { font-size: 85%; color: var(--muted); }
+.markdown-body .footnotes hr { height: 1px; margin: 2em 0 1em; }
+.markdown-body .footnotes ol { padding-left: 1.5em; }
+.markdown-body .footnote-ref sup, .markdown-body sup a { font-size: 75%; }
+.markdown-body .footnote-back-ref { text-decoration: none; margin-left: .25em; }
