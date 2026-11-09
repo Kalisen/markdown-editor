@@ -13,7 +13,7 @@ namespace MarkdownEditor.Plugin.TagFilter;
 /// GFM disallowed raw HTML (spec 0.29, section 6.11): in raw HTML, the leading <c>&lt;</c> of
 /// title, textarea, style, xmp, iframe, noembed, noframes, script and plaintext tags is escaped.
 /// </summary>
-public sealed class TagFilterPlugin : IMarkdownPlugin
+public sealed class TagFilterPlugin : IMarkdownPlugin, IDocumentFeatureProbe
 {
     public const string PluginId = "tag-filter";
 
@@ -25,6 +25,9 @@ public sealed class TagFilterPlugin : IMarkdownPlugin
 
     public IReadOnlyList<PreviewAsset> PreviewAssets { get; } = [];
 
+    public bool IsUsedBy(MarkdownDocument document) =>
+        document.GetData(TagFilterExtension.FilteredKey) is true;
+
     public void ConfigurePipeline(MarkdownPipelineBuilder builder) =>
         builder.Extensions.AddIfNotAlready<TagFilterExtension>();
 }
@@ -32,6 +35,9 @@ public sealed class TagFilterPlugin : IMarkdownPlugin
 internal sealed partial class TagFilterExtension : IMarkdownExtension
 {
     private const string EscapedLessThan = "&lt;";
+
+    /// <summary>Document data flag set when a disallowed tag was escaped (used to report the plugin as in use).</summary>
+    public static readonly object FilteredKey = new();
 
     [GeneratedRegex(@"<(?=/?(title|textarea|style|xmp|iframe|noembed|noframes|script|plaintext)(?:[\s/>]|$))",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
@@ -53,10 +59,18 @@ internal sealed partial class TagFilterExtension : IMarkdownExtension
     {
         foreach (var block in document.Descendants<HtmlBlock>())
         {
-            var filtered = Filter(block.Lines.ToString());
-            if (filtered != block.Lines.ToString()) block.Lines = new StringLineGroup(filtered);
+            var original = block.Lines.ToString();
+            var filtered = Filter(original);
+            if (filtered == original) continue;
+            block.Lines = new StringLineGroup(filtered);
+            document.SetData(FilteredKey, true);
         }
         foreach (var inline in document.Descendants<HtmlInline>())
-            inline.Tag = Filter(inline.Tag);
+        {
+            var filtered = Filter(inline.Tag);
+            if (filtered == inline.Tag) continue;
+            inline.Tag = filtered;
+            document.SetData(FilteredKey, true);
+        }
     }
 }

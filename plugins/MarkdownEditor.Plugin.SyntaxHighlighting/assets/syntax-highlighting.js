@@ -4,7 +4,7 @@
   const VENDOR = 'vendor/highlightjs-11.12.0/';
   const THEMES = { light: 'github.min.css', dark: 'github-dark.min.css' };
   // Rendered by other plugins (e.g. math) or not code.
-  const SKIPPED_LANGUAGES = new Set(['math', 'mermaid']);
+  const SKIPPED_LANGUAGES = new Set(['math', 'mermaid', 'dot', 'graphviz']);
 
   const api = window.mdeditor;
   const hljs = window.hljs;

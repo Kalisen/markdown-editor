@@ -9,7 +9,7 @@ using MarkdownEditor.Plugins.Abstractions.Preview;
 namespace MarkdownEditor.Plugin.Autolinks;
 
 /// <summary>GFM extended autolinks: bare <c>www.</c>, <c>http(s)://</c> URLs and email addresses become links.</summary>
-public sealed class AutolinksPlugin : IMarkdownPlugin
+public sealed class AutolinksPlugin : IMarkdownPlugin, IDocumentFeatureProbe
 {
     public const string PluginId = "autolinks";
 
@@ -20,6 +20,9 @@ public sealed class AutolinksPlugin : IMarkdownPlugin
     public Version Version => new(1, 0, 0);
 
     public IReadOnlyList<PreviewAsset> PreviewAssets { get; } = [];
+
+    public bool IsUsedBy(MarkdownDocument document) =>
+        document.Descendants<LinkInline>().Any(l => l.IsAutoLink);
 
     public void ConfigurePipeline(MarkdownPipelineBuilder builder) =>
         builder.Extensions.AddIfNotAlready<GfmAutolinkExtension>();
@@ -51,43 +54,62 @@ internal sealed class GfmAutolinkExtension : IMarkdownExtension
     {
         if (container is LinkInline) return;
 
-        var child = container.FirstChild;
-        while (child is not null)
+        var original = new List<Inline>();
+        for (var child = container.FirstChild; child is not null; child = child.NextSibling) original.Add(child);
+
+        var rebuilt = new List<Inline>();
+        var changed = false;
+        for (var i = 0; i < original.Count; i++)
         {
-            if (child is LiteralInline first)
+            if (original[i] is LiteralInline)
             {
                 // Merge a run of adjacent literals (Markdig splits text at unmatched delimiters such as '_').
-                var run = new List<LiteralInline> { first };
-                while (run[^1].NextSibling is LiteralInline next) run.Add(next);
-                var after = run[^1].NextSibling;
-                Rewrite(run, startsAtBoundary: first.PreviousSibling is not LiteralInline);
-                child = after;
+                var run = new List<LiteralInline>();
+                var startsAtBoundary = i == 0 || original[i - 1] is not LiteralInline;
+                while (i < original.Count && original[i] is LiteralInline literal) { run.Add(literal); i++; }
+                i--;
+                if (Rewrite(run, startsAtBoundary) is { } replacement)
+                {
+                    rebuilt.AddRange(replacement);
+                    changed = true;
+                }
+                else
+                {
+                    rebuilt.AddRange(run);
+                }
                 continue;
             }
-            if (child is ContainerInline nested) ProcessContainer(nested);
-            child = child.NextSibling;
+            if (original[i] is ContainerInline nested) ProcessContainer(nested);
+            rebuilt.Add(original[i]);
         }
+
+        if (!changed) return;
+        // Rebuild the child list with AppendChild only: splicing with InsertBefore can leave Markdig's
+        // sibling/last-child links inconsistent, hiding nodes from later tree walks.
+        foreach (var child in original) child.Remove();
+        foreach (var child in rebuilt) container.AppendChild(child);
     }
 
-    private static void Rewrite(List<LiteralInline> run, bool startsAtBoundary)
+    /// <returns>The nodes replacing the run, or null when it contains no autolink.</returns>
+    private static List<Inline>? Rewrite(List<LiteralInline> run, bool startsAtBoundary)
     {
         var text = new StringBuilder();
         foreach (var literal in run) text.Append(literal.Content.ToString());
         var source = text.ToString();
         var matches = GfmAutolinkScanner.Scan(source, startsAtBoundary);
-        if (matches.Count == 0) return;
+        if (matches.Count == 0) return null;
 
-        var anchor = run[0];
+        var replacement = new List<Inline>();
         var position = 0;
         foreach (var match in matches)
         {
-            if (match.Start > position) anchor.InsertBefore(new LiteralInline(source[position..match.Start]));
+            if (match.Start > position) replacement.Add(new LiteralInline(source[position..match.Start]));
             var link = new LinkInline(match.Url, string.Empty) { IsAutoLink = true };
             link.AppendChild(new LiteralInline(source.Substring(match.Start, match.Length)));
-            anchor.InsertBefore(link);
+            replacement.Add(link);
             position = match.Start + match.Length;
         }
-        if (position < source.Length) anchor.InsertBefore(new LiteralInline(source[position..]));
-        foreach (var literal in run) literal.Remove();
+        if (position < source.Length) replacement.Add(new LiteralInline(source[position..]));
+        return replacement;
     }
 }

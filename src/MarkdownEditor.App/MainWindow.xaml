@@ -31,7 +31,17 @@
             </MenuItem>
         </Menu>
         <StatusBar DockPanel.Dock="Bottom">
-            <StatusBarItem x:Name="StatusText" />
+            <StatusBar.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <DockPanel LastChildFill="True" />
+                </ItemsPanelTemplate>
+            </StatusBar.ItemsPanel>
+            <StatusBarItem x:Name="PluginSummary" DockPanel.Dock="Right" />
+            <Separator DockPanel.Dock="Right" />
+            <StatusBarItem x:Name="StatusText" DockPanel.Dock="Right" />
+            <StatusBarItem>
+                <TextBlock x:Name="ActiveExtensions" TextTrimming="CharacterEllipsis" />
+            </StatusBarItem>
         </StatusBar>
         <Grid>
             <Grid.ColumnDefinitions>

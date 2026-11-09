@@ -1,3 +1,4 @@
+using Markdig.Syntax;
 using System.Net;
 using Markdig;
 using Markdig.Extensions.Yaml;
@@ -12,7 +13,7 @@ namespace MarkdownEditor.Plugin.FrontMatter;
 /// YAML front matter (<c>---</c> … <c>---</c> at the start of the document) is shown as a table of its
 /// top-level keys, as on GitHub, instead of being rendered as text.
 /// </summary>
-public sealed class FrontMatterPlugin : IMarkdownPlugin
+public sealed class FrontMatterPlugin : IMarkdownPlugin, IDocumentFeatureProbe
 {
     public const string PluginId = "front-matter";
     public const string StylesheetPath = "assets/front-matter.css";
@@ -24,6 +25,9 @@ public sealed class FrontMatterPlugin : IMarkdownPlugin
     public Version Version => new(1, 0, 0);
 
     public IReadOnlyList<PreviewAsset> PreviewAssets { get; } = [PreviewAsset.Stylesheet(StylesheetPath)];
+
+    public bool IsUsedBy(MarkdownDocument document) =>
+        document.Descendants<YamlFrontMatterBlock>().Any(b => FrontMatterYaml.Parse(b.Lines.ToString()).Count > 0);
 
     public void ConfigurePipeline(MarkdownPipelineBuilder builder)
     {

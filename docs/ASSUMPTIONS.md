@@ -84,3 +84,7 @@ PDF uses WebView2 PrintToPdf of the live preview (print styles force light colou
 ## [#76](https://github.com/Kalisen/markdown-editor/issues/76) Diagram engines: Graphviz yes, PlantUML no
 
 PlantUML needs Java or a remote server (which would send document content off the machine), so it is not implemented. Graphviz runs offline via WebAssembly, which requires adding 'wasm-unsafe-eval' to the preview CSP script-src; script sources stay restricted to the app and plugin hosts.
+
+## [#78](https://github.com/Kalisen/markdown-editor/issues/78) Active extension detection
+
+Plugins opt in by implementing an optional IDocumentFeatureProbe contract that inspects the parsed document; plugins without a probe are never reported as active. Markdown is parsed once per render and the same syntax tree is used for HTML and detection.

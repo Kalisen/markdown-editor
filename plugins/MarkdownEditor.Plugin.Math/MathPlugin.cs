@@ -12,7 +12,7 @@ namespace MarkdownEditor.Plugin.Math;
 /// Math as on GitHub: <c>$inline$</c>, <c>$`inline`$</c>, <c>$$block$$</c> and <c>```math</c> fences,
 /// typeset in the preview by a bundled KaTeX.
 /// </summary>
-public sealed class MathPlugin : IMarkdownPlugin
+public sealed class MathPlugin : IMarkdownPlugin, IDocumentFeatureProbe
 {
     public const string PluginId = "math";
     public const string KatexVersion = "0.19.1";
@@ -21,6 +21,7 @@ public sealed class MathPlugin : IMarkdownPlugin
     public const string KatexStylesheetPath = $"{VendorFolder}/katex.min.css";
     public const string BootstrapScriptPath = "assets/math.js";
     public const string StylesheetPath = "assets/math.css";
+    public const string MathFenceLanguage = "math";
 
     public string Id => PluginId;
 
@@ -35,6 +36,9 @@ public sealed class MathPlugin : IMarkdownPlugin
         PreviewAsset.Script(KatexScriptPath),
         PreviewAsset.Script(BootstrapScriptPath),
     ];
+
+    public bool IsUsedBy(MarkdownDocument document) =>
+        document.Descendants<MathInline>().Any() || document.Descendants<MathBlock>().Any() || document.Descendants<FencedCodeBlock>().Any(b => b.Info == MathFenceLanguage);
 
     public void ConfigurePipeline(MarkdownPipelineBuilder builder)
     {

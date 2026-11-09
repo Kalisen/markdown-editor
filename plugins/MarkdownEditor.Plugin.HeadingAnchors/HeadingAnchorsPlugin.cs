@@ -1,3 +1,4 @@
+using Markdig.Syntax;
 using Markdig;
 using Markdig.Extensions.AutoIdentifiers;
 using MarkdownEditor.Plugins.Abstractions;
@@ -9,7 +10,7 @@ namespace MarkdownEditor.Plugin.HeadingAnchors;
 /// GitHub-compatible heading ids (lowercase, spaces to hyphens, punctuation removed, duplicates suffixed
 /// <c>-1</c>, <c>-2</c>…) so <c>#section</c> links work, plus a link icon shown on hover.
 /// </summary>
-public sealed class HeadingAnchorsPlugin : IMarkdownPlugin
+public sealed class HeadingAnchorsPlugin : IMarkdownPlugin, IDocumentFeatureProbe
 {
     public const string PluginId = "heading-anchors";
     public const string ScriptPath = "assets/heading-anchors.js";
@@ -23,6 +24,9 @@ public sealed class HeadingAnchorsPlugin : IMarkdownPlugin
 
     public IReadOnlyList<PreviewAsset> PreviewAssets { get; } =
         [PreviewAsset.Stylesheet(StylesheetPath), PreviewAsset.Script(ScriptPath)];
+
+    public bool IsUsedBy(MarkdownDocument document) =>
+        document.Descendants<HeadingBlock>().Any();
 
     public void ConfigurePipeline(MarkdownPipelineBuilder builder) => builder.UseAutoIdentifiers(AutoIdentifierOptions.GitHub);
 }

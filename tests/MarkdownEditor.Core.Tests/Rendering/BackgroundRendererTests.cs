@@ -8,7 +8,7 @@ public class BackgroundRendererTests
     public async Task Does_not_block_the_caller_while_rendering()
     {
         using var gate = new ManualResetEventSlim();
-        var renderer = new BackgroundRenderer(md =>
+        var renderer = new BackgroundRenderer<string>(md =>
         {
             gate.Wait(TestContext.Current.CancellationToken);
             return md.ToUpperInvariant();
@@ -25,7 +25,7 @@ public class BackgroundRendererTests
     public async Task Superseded_render_yields_null()
     {
         using var gate = new ManualResetEventSlim();
-        var renderer = new BackgroundRenderer(md =>
+        var renderer = new BackgroundRenderer<string>(md =>
         {
             if (md == "old") gate.Wait(TestContext.Current.CancellationToken);
             return md;

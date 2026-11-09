@@ -1,3 +1,4 @@
+using Markdig.Syntax;
 using Markdig;
 using Markdig.Extensions.AutoIdentifiers;
 using Markdig.Renderers;
@@ -10,7 +11,7 @@ namespace MarkdownEditor.Plugin.Toc;
 /// Table of contents: a line containing only <c>[TOC]</c> or <c>[[_TOC_]]</c> renders as a nested list of
 /// links to the document's headings.
 /// </summary>
-public sealed class TocPlugin : IMarkdownPlugin
+public sealed class TocPlugin : IMarkdownPlugin, IDocumentFeatureProbe
 {
     public const string PluginId = "toc";
     public const string StylesheetPath = "assets/toc.css";
@@ -22,6 +23,9 @@ public sealed class TocPlugin : IMarkdownPlugin
     public Version Version => new(1, 0, 0);
 
     public IReadOnlyList<PreviewAsset> PreviewAssets { get; } = [PreviewAsset.Stylesheet(StylesheetPath)];
+
+    public bool IsUsedBy(MarkdownDocument document) =>
+        document.Descendants<TocBlock>().Any();
 
     public void ConfigurePipeline(MarkdownPipelineBuilder builder)
     {

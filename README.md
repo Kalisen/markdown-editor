@@ -14,6 +14,7 @@ A Windows 11 desktop Markdown editor/viewer with a live split preview, compliant
   diagrams, math and highlighting as rendered.
 - Strict CommonMark core; all 652 spec examples are run as unit tests.
 - Plugins loaded from `plugins/<name>/MarkdownEditor.Plugin.*.dll` (Help > Plugins lists them and any load failures).
+- The status bar lists the extensions used by the open document (hover for all loaded plugins).
 - Bundled plugins:
   - **Pictures** (`images`) — relative image paths and size hints `![alt](a.png "=200x100")`.
   - GitHub Flavored Markdown (validated against the GFM 0.29 spec examples):
@@ -103,6 +104,8 @@ sequenceDiagram
    - `Id`: lowercase letters, digits, hyphens (used as a host name).
    - `ConfigurePipeline(MarkdownPipelineBuilder)`: add Markdig extensions.
    - `PreviewAssets`: scripts/stylesheets relative to the plugin folder.
+   - Optionally implement `IDocumentFeatureProbe.IsUsedBy(MarkdownDocument)` so the status bar can report
+     when the plugin applies to the open document.
 3. Preview scripts may register a post-render callback:
 
 ```js
