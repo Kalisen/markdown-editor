@@ -1,0 +1,16 @@
+/* GitHub alert colours (Primer), light and dark. */
+.markdown-alert { --alert: #0969da; padding: .5em 1em; margin: 1em 0; border-left: .25em solid var(--alert); }
+.markdown-alert > :first-child { margin-top: 0; }
+.markdown-alert > :last-child { margin-bottom: 0; }
+.markdown-alert-title { display: flex; align-items: center; gap: .5em; font-weight: 600; color: var(--alert); }
+.markdown-alert-title svg { fill: currentColor; }
+.markdown-alert-note { --alert: #0969da; }
+.markdown-alert-tip { --alert: #1a7f37; }
+.markdown-alert-important { --alert: #8250df; }
+.markdown-alert-warning { --alert: #9a6700; }
+.markdown-alert-caution { --alert: #cf222e; }
+html[data-theme="dark"] .markdown-alert-note { --alert: #4493f8; }
+html[data-theme="dark"] .markdown-alert-tip { --alert: #3fb950; }
+html[data-theme="dark"] .markdown-alert-important { --alert: #ab7df8; }
+html[data-theme="dark"] .markdown-alert-warning { --alert: #d29922; }
+html[data-theme="dark"] .markdown-alert-caution { --alert: #f85149; }
