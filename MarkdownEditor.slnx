@@ -43,5 +43,6 @@
     <Project Path="tests/MarkdownEditor.Plugin.TaskLists.Tests/MarkdownEditor.Plugin.TaskLists.Tests.csproj" />
     <Project Path="tests/MarkdownEditor.Plugin.Toc.Tests/MarkdownEditor.Plugin.Toc.Tests.csproj" />
     <Project Path="tests/MarkdownEditor.Plugin.WikiLinks.Tests/MarkdownEditor.Plugin.WikiLinks.Tests.csproj" />
+    <Project Path="tests/MarkdownEditor.Plugins.IntegrationTests/MarkdownEditor.Plugins.IntegrationTests.csproj" />
   </Folder>
 </Solution>

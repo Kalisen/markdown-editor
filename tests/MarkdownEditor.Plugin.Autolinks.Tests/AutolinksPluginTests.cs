@@ -1,4 +1,5 @@
 using Markdig;
+using Markdig.Syntax;
 using MarkdownEditor.Tests.Shared;
 
 namespace MarkdownEditor.Plugin.Autolinks.Tests;
@@ -32,5 +33,21 @@ public class AutolinksPluginTests
     {
         Assert.Equal("<p><em><a href=\"http://www.example.com\">www.example.com</a></em></p>\n", Render("*www.example.com*"));
         Assert.Contains("href=\"http://www.example.com/a_b_c\"", Render("see www.example.com/a_b_c now"));
+    }
+
+    [Theory]
+    [InlineData("*a* www.example.com")]
+    [InlineData("*a* www.example.com *b*")]
+    [InlineData("www.example.com *a*")]
+    public void Rewritten_paragraph_keeps_a_consistent_inline_tree(string markdown)
+    {
+        var builder = new MarkdownPipelineBuilder();
+        new AutolinksPlugin().ConfigurePipeline(builder);
+        var document = Markdown.Parse(markdown, builder.Build());
+
+        // Tree walks (used by later processing and usage probes) must see every node, not only the new ones.
+        var emphasis = document.Descendants<Markdig.Syntax.Inlines.EmphasisInline>().Count();
+        Assert.Equal(markdown.Split('*').Length / 2, emphasis);
+        Assert.Single(document.Descendants<Markdig.Syntax.Inlines.LinkInline>());
     }
 }

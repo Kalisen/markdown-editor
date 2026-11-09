@@ -1,3 +1,4 @@
+using Markdig.Syntax;
 using Markdig;
 using MarkdownEditor.Plugins.Abstractions;
 using MarkdownEditor.Plugins.Abstractions.Preview;
@@ -9,7 +10,7 @@ namespace MarkdownEditor.Plugin.SyntaxHighlighting;
 /// with GitHub's light/dark colours. Rendering is unchanged: CommonMark already emits
 /// <c>class="language-x"</c>; highlighting happens in the preview.
 /// </summary>
-public sealed class SyntaxHighlightingPlugin : IMarkdownPlugin
+public sealed class SyntaxHighlightingPlugin : IMarkdownPlugin, IDocumentFeatureProbe
 {
     public const string PluginId = "syntax-highlighting";
     public const string HighlightJsVersion = "11.12.0";
@@ -19,6 +20,9 @@ public sealed class SyntaxHighlightingPlugin : IMarkdownPlugin
     public const string DarkThemePath = $"{VendorFolder}/github-dark.min.css";
     public const string BootstrapScriptPath = "assets/syntax-highlighting.js";
     public const string StylesheetPath = "assets/syntax-highlighting.css";
+
+    /// <summary>Fence languages drawn by other plugins rather than highlighted (kept in sync with the script).</summary>
+    public static readonly IReadOnlySet<string> RenderedByOtherPlugins = new HashSet<string>(StringComparer.Ordinal) { "math", "mermaid", "dot", "graphviz" };
 
     public string Id => PluginId;
 
@@ -35,6 +39,9 @@ public sealed class SyntaxHighlightingPlugin : IMarkdownPlugin
         PreviewAsset.Script(HighlightJsPath),
         PreviewAsset.Script(BootstrapScriptPath),
     ];
+
+    public bool IsUsedBy(MarkdownDocument document) =>
+        document.Descendants<FencedCodeBlock>().Any(b => b.Info is { Length: > 0 } info && !RenderedByOtherPlugins.Contains(info));
 
     public void ConfigurePipeline(MarkdownPipelineBuilder builder)
     {

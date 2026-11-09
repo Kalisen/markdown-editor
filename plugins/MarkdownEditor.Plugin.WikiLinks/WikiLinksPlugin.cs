@@ -1,3 +1,4 @@
+using Markdig.Syntax;
 using Markdig;
 using Markdig.Helpers;
 using Markdig.Parsers;
@@ -14,7 +15,7 @@ namespace MarkdownEditor.Plugin.WikiLinks;
 /// Obsidian-style wikilinks: <c>[[Note]]</c>, <c>[[folder/Note|alias]]</c>, <c>[[Note#Heading]]</c> link to
 /// <c>Note.md</c>; the editor opens them like any other link to a Markdown file.
 /// </summary>
-public sealed class WikiLinksPlugin : IMarkdownPlugin
+public sealed class WikiLinksPlugin : IMarkdownPlugin, IDocumentFeatureProbe
 {
     public const string PluginId = "wikilinks";
     public const string StylesheetPath = "assets/wikilinks.css";
@@ -26,6 +27,9 @@ public sealed class WikiLinksPlugin : IMarkdownPlugin
     public Version Version => new(1, 0, 0);
 
     public IReadOnlyList<PreviewAsset> PreviewAssets { get; } = [PreviewAsset.Stylesheet(StylesheetPath)];
+
+    public bool IsUsedBy(MarkdownDocument document) =>
+        document.Descendants<LinkInline>().Any(l => l.GetAttributes().Classes?.Contains(WikiLinkParser.CssClass) == true);
 
     public void ConfigurePipeline(MarkdownPipelineBuilder builder) =>
         builder.Extensions.AddIfNotAlready<WikiLinkExtension>();

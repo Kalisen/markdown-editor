@@ -10,6 +10,7 @@ using MarkdownEditor.Core.Editing;
 using MarkdownEditor.Core.Export;
 using MarkdownEditor.Core.Plugins;
 using MarkdownEditor.Core.Rendering;
+using MarkdownEditor.Plugins.Abstractions;
 
 namespace MarkdownEditor.App;
 
@@ -22,7 +23,7 @@ public partial class MainWindow : Window
 
     private readonly EditorSession _session;
     private readonly IUserPrompts _prompts;
-    private readonly BackgroundRenderer _renderer;
+    private readonly BackgroundRenderer<RenderResult> _renderer;
     private readonly IReadOnlyList<LoadedPlugin> _plugins;
     private readonly IReadOnlyList<PluginLoadFailure> _failures;
     private readonly PreviewHost _preview;
@@ -44,7 +45,7 @@ public partial class MainWindow : Window
         _session = session;
         _prompts = prompts;
         _theme = theme;
-        _renderer = new BackgroundRenderer(renderer.Render);
+        _renderer = new BackgroundRenderer<RenderResult>(renderer.RenderDocument);
         _plugins = plugins;
         _failures = failures;
 
@@ -70,7 +71,7 @@ public partial class MainWindow : Window
         };
 
         LoadDocument();
-        StatusText.Content = failures.Count == 0
+        PluginSummary.Content = failures.Count == 0
             ? $"{plugins.Count} plugin(s) loaded"
             : $"{plugins.Count} plugin(s) loaded, {failures.Count} failed (Help > Plugins)";
     }
@@ -110,7 +111,9 @@ public partial class MainWindow : Window
         _renderTimer.Stop();
         SyncText();
         UpdateTitle();
-        if (await _renderer.RenderAsync(_session.Document.Text) is { } html) _preview.Render(html);
+        if (await _renderer.RenderAsync(_session.Document.Text) is not { } result) return;
+        _preview.Render(result.Html);
+        ShowUsedExtensions(result.UsedPlugins);
     }
 
     /// <summary>Runs a document operation on up-to-date text, then refreshes the title.</summary>
@@ -119,6 +122,13 @@ public partial class MainWindow : Window
         SyncText();
         await operation();
         UpdateTitle();
+    }
+
+    /// <summary>Status bar: the extensions applying to the current document; tooltip lists all loaded plugins.</summary>
+    private void ShowUsedExtensions(IReadOnlyList<IMarkdownPlugin> used)
+    {
+        ActiveExtensions.Text = PluginUsageText.Describe(used);
+        ActiveExtensions.ToolTip = PluginUsageText.Details(_plugins.Select(p => p.Plugin), used);
     }
 
     private void SyncScroll()

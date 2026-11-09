@@ -1,3 +1,4 @@
+using Markdig.Syntax;
 using Markdig;
 using MarkdownEditor.Plugins.Abstractions;
 using MarkdownEditor.Plugins.Abstractions.Preview;
@@ -8,7 +9,7 @@ namespace MarkdownEditor.Plugin.Graphviz;
 /// Renders <c>```dot</c> / <c>```graphviz</c> fenced blocks as diagrams with a bundled Graphviz
 /// (Viz.js, WebAssembly). Markdown rendering is unchanged; diagrams are drawn in the preview.
 /// </summary>
-public sealed class GraphvizPlugin : IMarkdownPlugin
+public sealed class GraphvizPlugin : IMarkdownPlugin, IDocumentFeatureProbe
 {
     public const string PluginId = "graphviz";
     public const string VizVersion = "3.31.0";
@@ -29,6 +30,9 @@ public sealed class GraphvizPlugin : IMarkdownPlugin
         PreviewAsset.Script(VizScriptPath),
         PreviewAsset.Script(BootstrapScriptPath),
     ];
+
+    public bool IsUsedBy(MarkdownDocument document) =>
+        document.Descendants<FencedCodeBlock>().Any(b => b.Info is { } info && Languages.Contains(info));
 
     public void ConfigurePipeline(MarkdownPipelineBuilder builder)
     {

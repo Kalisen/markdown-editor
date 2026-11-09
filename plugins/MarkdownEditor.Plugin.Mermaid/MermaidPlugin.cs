@@ -1,3 +1,4 @@
+using Markdig.Syntax;
 using Markdig;
 using MarkdownEditor.Plugins.Abstractions;
 using MarkdownEditor.Plugins.Abstractions.Preview;
@@ -7,7 +8,7 @@ namespace MarkdownEditor.Plugin.Mermaid;
 /// <summary>
 /// Renders <c>```mermaid</c> fenced code blocks as diagrams using a bundled Mermaid build.
 /// </summary>
-public sealed class MermaidPlugin : IMarkdownPlugin
+public sealed class MermaidPlugin : IMarkdownPlugin, IDocumentFeatureProbe
 {
     public const string PluginId = "mermaid";
     public const string MermaidVersion = "12.3.0";
@@ -28,6 +29,9 @@ public sealed class MermaidPlugin : IMarkdownPlugin
         PreviewAsset.Script(MermaidScriptPath),
         PreviewAsset.Script(BootstrapScriptPath),
     ];
+
+    public bool IsUsedBy(MarkdownDocument document) =>
+        document.Descendants<FencedCodeBlock>().Any(MermaidCodeBlockRenderer.IsMermaid);
 
     public void ConfigurePipeline(MarkdownPipelineBuilder builder) =>
         builder.Extensions.AddIfNotAlready<MermaidExtension>();

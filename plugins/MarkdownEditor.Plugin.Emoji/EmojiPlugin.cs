@@ -1,3 +1,4 @@
+using Markdig.Syntax;
 using Markdig;
 using Markdig.Extensions.Emoji;
 using MarkdownEditor.Plugins.Abstractions;
@@ -9,7 +10,7 @@ namespace MarkdownEditor.Plugin.Emoji;
 /// GitHub emoji shortcodes (<c>:smile:</c>, <c>:+1:</c>…) render as Unicode emoji. Text smileys such as
 /// <c>:)</c> are left alone, as on GitHub.
 /// </summary>
-public sealed class EmojiPlugin : IMarkdownPlugin
+public sealed class EmojiPlugin : IMarkdownPlugin, IDocumentFeatureProbe
 {
     public const string PluginId = "emoji";
 
@@ -20,6 +21,9 @@ public sealed class EmojiPlugin : IMarkdownPlugin
     public Version Version => new(1, 0, 0);
 
     public IReadOnlyList<PreviewAsset> PreviewAssets { get; } = [];
+
+    public bool IsUsedBy(MarkdownDocument document) =>
+        document.Descendants<EmojiInline>().Any();
 
     public void ConfigurePipeline(MarkdownPipelineBuilder builder) =>
         builder.UseEmojiAndSmiley(new EmojiMapping(EmojiMapping.GetDefaultEmojiShortcodeToUnicode(), new Dictionary<string, string>()));

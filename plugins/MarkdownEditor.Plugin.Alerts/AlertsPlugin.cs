@@ -1,3 +1,4 @@
+using Markdig.Syntax;
 using Markdig;
 using Markdig.Extensions.Alerts;
 using Markdig.Helpers;
@@ -18,7 +19,7 @@ public enum AlertKind
 }
 
 /// <summary>GitHub alerts: blockquotes starting with <c>[!NOTE]</c>, <c>[!TIP]</c>, <c>[!IMPORTANT]</c>, <c>[!WARNING]</c>, <c>[!CAUTION]</c>.</summary>
-public sealed class AlertsPlugin : IMarkdownPlugin
+public sealed class AlertsPlugin : IMarkdownPlugin, IDocumentFeatureProbe
 {
     public const string PluginId = "alerts";
     public const string StylesheetPath = "assets/alerts.css";
@@ -30,6 +31,9 @@ public sealed class AlertsPlugin : IMarkdownPlugin
     public Version Version => new(1, 0, 0);
 
     public IReadOnlyList<PreviewAsset> PreviewAssets { get; } = [PreviewAsset.Stylesheet(StylesheetPath)];
+
+    public bool IsUsedBy(MarkdownDocument document) =>
+        document.Descendants<AlertBlock>().Any();
 
     public void ConfigurePipeline(MarkdownPipelineBuilder builder)
     {
