@@ -10,6 +10,8 @@ A Windows 11 desktop Markdown editor/viewer with a live split preview, compliant
 - Links in the preview: web links open in the browser, links to other Markdown files open in the editor.
 - New / Open / Save / Save As (Ctrl+N / Ctrl+O / Ctrl+S / Ctrl+Shift+S), drag & drop, open from command line.
 - Unsaved-changes guard on New, Open and Close.
+- File > Export to HTML (single file, stylesheets inlined, no scripts) or PDF (light theme), including
+  diagrams, math and highlighting as rendered.
 - Strict CommonMark core; all 652 spec examples are run as unit tests.
 - Plugins loaded from `plugins/<name>/MarkdownEditor.Plugin.*.dll` (Help > Plugins lists them and any load failures).
 - Bundled plugins:

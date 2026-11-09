@@ -41,6 +41,8 @@ public class EditorSessionTests
             return SavePath;
         }
 
+        public string? AskExportPath(string suggestedName, MarkdownEditor.Core.Export.ExportFormat format) => null;
+
         public UnsavedChangesDecision AskUnsavedChanges(string documentName)
         {
             UnsavedAsked++;
