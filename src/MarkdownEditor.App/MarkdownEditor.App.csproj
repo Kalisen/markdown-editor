@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>MarkdownEditor</AssemblyName>
+    <RootNamespace>MarkdownEditor.App</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="MarkdownEditor.App.Tests" />
+    <PackageReference Include="AvalonEdit" />
+    <PackageReference Include="Microsoft.Web.WebView2" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MarkdownEditor.Core\MarkdownEditor.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Editing\Markdown.xshd" />
+  </ItemGroup>
+  <!-- Build bundled plugins and stage them under plugins/<name>/ -->
+  <ItemGroup>
+    <BundledPlugin Include="..\..\plugins\*\*.csproj" />
+  </ItemGroup>
+  <Target Name="StageBundledPlugins" AfterTargets="Build">
+    <MSBuild Projects="@(BundledPlugin)" Targets="Build" Properties="Configuration=$(Configuration)">
+      <Output TaskParameter="TargetOutputs" ItemName="_PluginAssembly" />
+    </MSBuild>
+    <ItemGroup>
+      <_PluginFiles Include="%(_PluginAssembly.RootDir)%(_PluginAssembly.Directory)**\*.*"
+                    PluginName="$([System.String]::Copy('%(_PluginAssembly.Filename)').Replace('MarkdownEditor.Plugin.', '').ToLowerInvariant())"
+                    Exclude="%(_PluginAssembly.RootDir)%(_PluginAssembly.Directory)**\*.pdb" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_PluginFiles)" DestinationFiles="@(_PluginFiles->'$(OutDir)plugins\%(PluginName)\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+  </Target>
+</Project>

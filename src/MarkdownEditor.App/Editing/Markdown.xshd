@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<SyntaxDefinition name="Markdown" extensions=".md;.markdown" xmlns="http://icsharpcode.net/sharpdevelop/syntaxdefinition/2008">
+  <Color name="Heading" foreground="#3A7BD5" fontWeight="bold" />
+  <Color name="Emphasis" fontStyle="italic" />
+  <Color name="Strong" fontWeight="bold" />
+  <Color name="Code" foreground="#C2185B" />
+  <Color name="Link" foreground="#2E8B57" />
+  <Color name="Quote" foreground="#808080" />
+  <Color name="ListMarker" foreground="#E07B00" fontWeight="bold" />
+  <RuleSet>
+    <Span color="Code" multiline="true">
+      <Begin>^\s{0,3}(```|~~~).*$</Begin>
+      <End>^\s{0,3}(```|~~~)\s*$</End>
+    </Span>
+    <Rule color="Heading">^\s{0,3}\#{1,6}(\s.*)?$</Rule>
+    <Rule color="Quote">^\s{0,3}&gt;.*$</Rule>
+    <Rule color="ListMarker">^\s*([-+*]|\d{1,9}[.)])(?=\s)</Rule>
+    <Rule color="Code">`[^`\n]+`</Rule>
+    <!-- AvalonEdit compiles rules with ExplicitCapture: back-references must use named groups. -->
+    <Rule color="Strong">(?&lt;d&gt;\*\*|__)[^\s*_](.*?[^\s])?\k&lt;d&gt;</Rule>
+    <Rule color="Emphasis">(?&lt;d&gt;\*|_)[^\s*_](.*?[^\s])?\k&lt;d&gt;</Rule>
+    <Rule color="Link">!?\[[^\]\n]*\]\([^)\n]*\)</Rule>
+  </RuleSet>
+</SyntaxDefinition>
