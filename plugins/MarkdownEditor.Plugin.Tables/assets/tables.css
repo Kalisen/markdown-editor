@@ -1,0 +1,4 @@
+.markdown-body table { border-collapse: collapse; display: block; width: max-content; max-width: 100%; overflow: auto; margin: 1em 0; }
+.markdown-body th, .markdown-body td { border: 1px solid var(--border); padding: 6px 13px; }
+.markdown-body th { font-weight: 600; }
+.markdown-body tbody tr:nth-child(2n) { background: var(--code-bg); }
