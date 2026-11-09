@@ -14,7 +14,12 @@ A Windows 11 desktop Markdown editor/viewer with a live split preview, compliant
 - Plugins loaded from `plugins/<name>/MarkdownEditor.Plugin.*.dll` (Help > Plugins lists them and any load failures).
 - Bundled plugins:
   - **Pictures** (`images`) — relative image paths and size hints `![alt](a.png "=200x100")`.
-  - **Tables** (`tables`) — GitHub Flavored Markdown pipe tables with column alignment.
+  - GitHub Flavored Markdown (validated against the GFM 0.29 spec examples):
+    **Tables** (`tables`), **Task lists** (`task-lists`), **Strikethrough** (`strikethrough`),
+    **Autolinks** (`autolinks`), **Disallowed raw HTML** (`tag-filter`).
+  - GitHub.com extras: **Footnotes** (`footnotes`), **Alerts** (`alerts`), **Heading anchors**
+    (`heading-anchors`), **Emoji shortcodes** (`emoji`), **Syntax highlighting** (`syntax-highlighting`,
+    highlight.js 11.12.0 bundled), **Math** (`math`, KaTeX 0.19.1 bundled).
   - **Mermaid diagrams** (`mermaid`) — ```` ```mermaid ```` fenced blocks rendered with Mermaid 12.3.0 (bundled, offline), inline syntax errors, light/dark theme.
 
 ## Build & run
