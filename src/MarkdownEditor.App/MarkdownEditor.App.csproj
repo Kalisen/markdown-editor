@@ -15,6 +15,10 @@
     <ProjectReference Include="..\MarkdownEditor.Core\MarkdownEditor.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <!-- Compact the Large Object Heap more eagerly (large documents and HTML strings live there). -->
+    <RuntimeHostConfigurationOption Include="System.GC.ConserveMemory" Value="5" />
+  </ItemGroup>
+  <ItemGroup>
     <EmbeddedResource Include="Editing\Markdown.xshd" />
   </ItemGroup>
   <!-- Bundled plugins: restored and built as (non-referenced) dependencies, then staged under plugins/<name>/ -->

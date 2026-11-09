@@ -24,4 +24,11 @@ public class MarkdownDocumentTests
         doc.MarkSaved(@"C:\e\b.md");
         Assert.Equal(("b.md", @"C:\e", false), (doc.DisplayName, doc.Directory, doc.IsDirty));
     }
+
+    [Fact]
+    public void Same_length_edit_is_dirty()
+    {
+        var doc = new MarkdownDocument(text: "abc") { Text = "abd" };
+        Assert.True(doc.IsDirty);
+    }
 }

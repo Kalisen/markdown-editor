@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using System.Text;
 using System.Windows;
 using System.Windows.Input;
@@ -16,9 +16,10 @@ public partial class MainWindow : Window
     private const string AppTitle = "Markdown Editor";
     private const string DirtyMarker = "*";
     private static readonly TimeSpan RenderDebounce = TimeSpan.FromMilliseconds(300);
+    private const int UndoLimit = 2000;
 
     private readonly EditorSession _session;
-    private readonly MarkdownRenderer _renderer;
+    private readonly BackgroundRenderer _renderer;
     private readonly IReadOnlyList<LoadedPlugin> _plugins;
     private readonly IReadOnlyList<PluginLoadFailure> _failures;
     private readonly PreviewHost _preview;
@@ -26,16 +27,23 @@ public partial class MainWindow : Window
     private bool _loadingDocument;
     private bool _closeConfirmed;
 
+    /// <summary>
+    /// True when the editor holds edits not yet copied into the document model. The full text is only
+    /// materialized when rendering or before a document operation, not on every keystroke.
+    /// </summary>
+    private bool _editorAhead;
+
     internal MainWindow(EditorSession session, MarkdownRenderer renderer, IReadOnlyList<LoadedPlugin> plugins,
         IReadOnlyList<PluginLoadFailure> failures, PreviewTheme theme)
     {
         InitializeComponent();
         _session = session;
-        _renderer = renderer;
+        _renderer = new BackgroundRenderer(renderer.Render);
         _plugins = plugins;
         _failures = failures;
 
         Editor.SyntaxHighlighting = MarkdownHighlighting.Load();
+        Editor.Document.UndoStack.SizeLimit = UndoLimit;
         _preview = new PreviewHost(Preview, plugins, theme);
         _preview.Ready += (_, _) => RenderNow();
         _renderTimer = new DispatcherTimer { Interval = RenderDebounce };
@@ -45,7 +53,10 @@ public partial class MainWindow : Window
         Editor.TextArea.TextView.ScrollOffsetChanged += (_, _) => SyncScroll();
         _session.DocumentChanged += (_, _) => LoadDocument();
         Drop += OnDrop;
-        _preview.OpenDocumentRequested += async (_, path) => await _session.OpenAsync(path);
+        _preview.OpenDocumentRequested += async (_, path) => await RunSessionAsync(() => _session.OpenAsync(path));
+        StateChanged += (_, _) => _preview.SetBackground(WindowState == WindowState.Minimized);
+        Activated += (_, _) => _preview.SetBackground(false);
+        Deactivated += (_, _) => _preview.SetBackground(true);
         Loaded += async (_, _) =>
         {
             if (await _preview.InitializeAsync() is { } error)
@@ -63,6 +74,7 @@ public partial class MainWindow : Window
         _loadingDocument = true;
         if (Editor.Text != _session.Document.Text) Editor.Text = _session.Document.Text;
         _loadingDocument = false;
+        _editorAhead = false;
         _preview.SetDocumentFolder(_session.Document.Directory);
         UpdateTitle();
         RenderNow();
@@ -71,16 +83,36 @@ public partial class MainWindow : Window
     private void OnEditorTextChanged(object? sender, EventArgs e)
     {
         if (_loadingDocument) return;
-        _session.Document.Text = Editor.Text;
-        UpdateTitle();
+        if (!_editorAhead)
+        {
+            _editorAhead = true;
+            UpdateTitle();
+        }
         _renderTimer.Stop();
         _renderTimer.Start();
     }
 
-    private void RenderNow()
+    private void SyncText()
+    {
+        if (!_editorAhead) return;
+        _session.Document.Text = Editor.Text;
+        _editorAhead = false;
+    }
+
+    private async void RenderNow()
     {
         _renderTimer.Stop();
-        _preview.Render(_renderer.Render(_session.Document.Text));
+        SyncText();
+        UpdateTitle();
+        if (await _renderer.RenderAsync(_session.Document.Text) is { } html) _preview.Render(html);
+    }
+
+    /// <summary>Runs a document operation on up-to-date text, then refreshes the title.</summary>
+    private async Task RunSessionAsync(Func<Task<bool>> operation)
+    {
+        SyncText();
+        await operation();
+        UpdateTitle();
     }
 
     private void SyncScroll()
@@ -93,21 +125,21 @@ public partial class MainWindow : Window
     private void UpdateTitle()
     {
         var doc = _session.Document;
-        Title = $"{doc.DisplayName}{(doc.IsDirty ? DirtyMarker : string.Empty)} - {AppTitle}";
+        Title = $"{doc.DisplayName}{(_editorAhead || doc.IsDirty ? DirtyMarker : string.Empty)} - {AppTitle}";
     }
 
-    private async void OnNew(object sender, ExecutedRoutedEventArgs e) => await _session.NewAsync();
+    private async void OnNew(object sender, ExecutedRoutedEventArgs e) => await RunSessionAsync(_session.NewAsync);
 
-    private async void OnOpen(object sender, ExecutedRoutedEventArgs e) => await _session.OpenAsync();
+    private async void OnOpen(object sender, ExecutedRoutedEventArgs e) => await RunSessionAsync(() => _session.OpenAsync());
 
     private async void OnSave(object sender, ExecutedRoutedEventArgs e)
     {
-        if (await _session.SaveAsync()) UpdateTitle();
+        await RunSessionAsync(_session.SaveAsync);
     }
 
     private async void OnSaveAs(object sender, ExecutedRoutedEventArgs e)
     {
-        if (await _session.SaveAsAsync()) UpdateTitle();
+        await RunSessionAsync(_session.SaveAsAsync);
     }
 
     private void OnExit(object sender, RoutedEventArgs e) => Close();
@@ -115,7 +147,7 @@ public partial class MainWindow : Window
     private async void OnDrop(object sender, DragEventArgs e)
     {
         if (e.Data.GetData(DataFormats.FileDrop) is string[] { Length: > 0 } files)
-            await _session.OpenAsync(files[0]);
+            await RunSessionAsync(() => _session.OpenAsync(files[0]));
     }
 
     protected override async void OnClosing(CancelEventArgs e)
@@ -123,6 +155,7 @@ public partial class MainWindow : Window
         base.OnClosing(e);
         if (_closeConfirmed) return;
         e.Cancel = true;
+        SyncText();
         if (!await _session.ConfirmDiscardAsync()) return;
         _closeConfirmed = true;
         Close();
