@@ -10,7 +10,9 @@ A Windows 11 desktop Markdown editor/viewer with a live split preview, compliant
 - Unsaved-changes guard on New, Open and Close.
 - Strict CommonMark core; all 652 spec examples are run as unit tests.
 - Plugins loaded from `plugins/<name>/MarkdownEditor.Plugin.*.dll` (Help > Plugins lists them and any load failures).
-- Bundled plugin: **Pictures** (`images`) — relative image paths and size hints `![alt](a.png "=200x100")`.
+- Bundled plugins:
+  - **Pictures** (`images`) — relative image paths and size hints `![alt](a.png "=200x100")`.
+  - **Mermaid diagrams** (`mermaid`) — ```` ```mermaid ```` fenced blocks rendered with Mermaid 12.3.0 (bundled, offline), inline syntax errors, light/dark theme.
 
 ## Build & run
 

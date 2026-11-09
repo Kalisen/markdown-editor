@@ -1,0 +1,5 @@
+.mermaid-diagram { margin: 1em 0; text-align: center; overflow-x: auto; }
+.mermaid-diagram svg { max-width: 100%; height: auto; }
+.mermaid-diagram > .mermaid-source { text-align: left; opacity: .6; }
+.mermaid-error { text-align: left; border: 1px solid #d1242f; border-left-width: 4px; border-radius: 6px; padding: 8px 12px; color: #d1242f; }
+.mermaid-error pre { color: var(--fg, inherit); white-space: pre-wrap; }

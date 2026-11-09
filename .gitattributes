@@ -1,0 +1,2 @@
+# Vendored third-party bundles are stored byte-for-byte.
+plugins/**/vendor/** -text
