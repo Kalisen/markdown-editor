@@ -33,7 +33,8 @@ public static class HtmlExportBuilder
             </main>
             </body>
             </html>
-            """;
+            """.ReplaceLineEndings("
+"); // raw string newlines follow the source file's line endings
     }
 }
 
