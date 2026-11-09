@@ -3,4 +3,9 @@
   <ItemGroup>
     <Using Include="Xunit" />
   </ItemGroup>
+  <!-- Plugin test projects share the GFM spec examples and helper. -->
+  <ItemGroup Condition="$(MSBuildProjectName.Contains('.Plugin.'))">
+    <Compile Include="$(MSBuildThisFileDirectory)Shared\*.cs" Link="Shared\%(Filename)%(Extension)" />
+    <None Include="$(MSBuildThisFileDirectory)Shared\Spec\*.json" Link="Spec\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>
