@@ -4,18 +4,26 @@
   const DIAGRAM_SELECTOR = '.mermaid-diagram';
   const SOURCE_SELECTOR = '.mermaid-source';
   const ERROR_CLASS = 'mermaid-error';
-  const MAX_CACHE_ENTRIES = 100;
+  // Bounded by total size: SVGs of large diagrams can be hundreds of KB each.
+  const MAX_CACHE_CHARS = 4 * 1024 * 1024;
 
   const api = window.mdeditor;
   const theme = api.theme === 'dark' ? 'dark' : 'default';
   const cache = new Map();
+  let cachedChars = 0;
   let counter = 0;
 
   window.mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme });
 
   function remember(key, svg) {
+    if (svg.length > MAX_CACHE_CHARS) return;
     cache.set(key, svg);
-    if (cache.size > MAX_CACHE_ENTRIES) cache.delete(cache.keys().next().value);
+    cachedChars += svg.length;
+    while (cachedChars > MAX_CACHE_CHARS) {
+      const [oldestKey, oldestSvg] = cache.entries().next().value;
+      cache.delete(oldestKey);
+      cachedChars -= oldestSvg.length;
+    }
   }
 
   function showError(container, source, error) {
@@ -33,7 +41,8 @@
 
   async function renderDiagram(container) {
     const sourceElement = container.querySelector(SOURCE_SELECTOR);
-    if (!sourceElement) return;
+    // Already rendered (kept by the incremental preview update), or removed by a newer update.
+    if (!sourceElement || !container.isConnected) return;
     const source = sourceElement.textContent;
     const key = theme + '\u0000' + source;
     let svg = cache.get(key);

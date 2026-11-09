@@ -14,3 +14,5 @@ blockquote { margin: 0; padding: 0 1em; color: var(--muted); border-left: .25em 
 hr { border: 0; height: .25em; background: var(--border); }
 table { border-collapse: collapse; }
 th, td { border: 1px solid var(--border); padding: 6px 13px; }
+/* Skip layout/paint (and its memory) for off-screen blocks; sizes are remembered once rendered. */
+.markdown-body > * { content-visibility: auto; contain-intrinsic-size: auto 1.5em; }

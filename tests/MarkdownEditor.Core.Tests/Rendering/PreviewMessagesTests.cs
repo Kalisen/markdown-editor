@@ -6,14 +6,6 @@ namespace MarkdownEditor.Core.Tests.Rendering;
 public class PreviewMessagesTests
 {
     [Fact]
-    public void Render_message_carries_html()
-    {
-        using var json = JsonDocument.Parse(PreviewMessages.Render("<p>a</p>"));
-        Assert.Equal(PreviewMessages.RenderType, json.RootElement.GetProperty("type").GetString());
-        Assert.Equal("<p>a</p>", json.RootElement.GetProperty("html").GetString());
-    }
-
-    [Fact]
     public void Parses_ready_and_open_link_messages()
     {
         Assert.Equal(new PreviewInboundMessage(PreviewInboundKind.Ready), PreviewMessages.TryParse("""{"type":"ready"}"""));

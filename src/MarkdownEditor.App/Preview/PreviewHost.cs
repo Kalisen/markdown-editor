@@ -15,7 +15,10 @@ namespace MarkdownEditor.App.Preview;
 /// </summary>
 internal sealed class PreviewHost(WebView2 view, IReadOnlyList<LoadedPlugin> plugins, PreviewTheme theme)
 {
+    private const double ScrollEpsilon = 0.001;
+
     private bool _ready;
+    private double _lastScrollRatio = double.NaN;
     private string? _pendingHtml;
     private string? _documentFolder;
 
@@ -93,12 +96,21 @@ internal sealed class PreviewHost(WebView2 view, IReadOnlyList<LoadedPlugin> plu
             _pendingHtml = html;
             return;
         }
-        view.CoreWebView2.PostWebMessageAsJson(PreviewMessages.Render(html));
+        view.CoreWebView2.PostWebMessageAsString(html);
     }
 
     public void ScrollTo(double ratio)
     {
-        if (_ready) view.CoreWebView2.PostWebMessageAsJson(PreviewMessages.Scroll(ratio));
+        if (!_ready || Math.Abs(ratio - _lastScrollRatio) < ScrollEpsilon) return;
+        _lastScrollRatio = ratio;
+        view.CoreWebView2.PostWebMessageAsJson(PreviewMessages.Scroll(ratio));
+    }
+
+    /// <summary>Lowers WebView2 memory usage while the app is minimized or in the background.</summary>
+    public void SetBackground(bool background)
+    {
+        if (view.CoreWebView2 is { } core)
+            core.MemoryUsageTargetLevel = background ? CoreWebView2MemoryUsageTargetLevel.Low : CoreWebView2MemoryUsageTargetLevel.Normal;
     }
 
     private void MapDocumentFolder()
