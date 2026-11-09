@@ -5,7 +5,9 @@ A Windows 11 desktop Markdown editor/viewer with a live split preview, compliant
 
 ## Features
 
-- Split view: syntax-highlighted source (AvalonEdit) and live HTML preview (WebView2), debounced at 300 ms.
+- Split view: syntax-highlighted source (AvalonEdit) and live HTML preview (WebView2), debounced at 300 ms,
+  rendered on a background thread with incremental preview updates and scroll sync.
+- Links in the preview: web links open in the browser, links to other Markdown files open in the editor.
 - New / Open / Save / Save As (Ctrl+N / Ctrl+O / Ctrl+S / Ctrl+Shift+S), drag & drop, open from command line.
 - Unsaved-changes guard on New, Open and Close.
 - Strict CommonMark core; all 652 spec examples are run as unit tests.
@@ -55,9 +57,29 @@ flowchart LR
 
 ### Preview pipeline
 
-1. Markdown → HTML by Markdig (strict CommonMark + plugin extensions).
-2. The preview shell page is loaded once from `https://app.mdeditor.local/`; updates are posted as JSON
-   web messages so the page never reloads (scroll position and plugin state are kept).
+```mermaid
+sequenceDiagram
+    participant E as Editor (UI thread)
+    participant R as BackgroundRenderer
+    participant H as PreviewHost
+    participant P as Preview page (WebView2)
+    E->>E: keystroke (no text copy), restart 300 ms timer
+    E->>R: timer: sync text, RenderAsync(markdown)
+    R-->>E: HTML (null if a newer render started)
+    E->>H: Render(html)
+    H->>P: PostWebMessageAsString(html)
+    P->>P: patch changed top-level blocks only
+    P->>P: plugin onRender callbacks (e.g. Mermaid)
+    P-->>H: {type: open-link, href} on click
+    H->>H: PreviewLinkPolicy: browser / open in editor / ignore
+```
+
+1. Markdown → HTML by Markdig (strict CommonMark + plugin extensions), off the UI thread; only the
+   latest request's result is shown.
+2. The preview shell (`index.html`, `preview.js`, `preview.css`) is loaded once from
+   `https://app.mdeditor.local/`. Rendered HTML is posted as a plain string message; the page diffs it
+   against the previous render by top-level block and replaces only the changed range, so unchanged
+   content, scroll position and plugin output (rendered diagrams) are kept.
 3. Plugin assets are served from `https://<plugin-id>.plugin.mdeditor.local/`, the open document's
    folder from `https://doc.mdeditor.local/`.
 
@@ -76,6 +98,11 @@ window.mdeditor.onRender(async (root) => { /* transform rendered content */ });
 // window.mdeditor.theme is "light" or "dark"
 ```
 
+   Callbacks run after every update. Because unchanged blocks are kept between updates, a callback must
+   be idempotent (skip content it already transformed) and may change the inside of top-level blocks but
+   must not add or remove top-level nodes of `root`.
+4. Scripts must be files (the preview CSP forbids inline script and `eval`).
+
 Plugins are trusted code; a plugin that fails to load or configure is skipped and reported, never fatal.
 
 ## Security model
@@ -91,7 +118,31 @@ Plugins are trusted code; a plugin that fails to load or configure is skipped an
 - **Plugins are trusted code** running with your privileges. Install the editor where only administrators
   can write (e.g. `Program Files`) and only add plugins you trust to its `plugins` folder.
 
+## Performance and memory
+
+Measured with a 650 KB / 4,000-section document (Release build, 40 edits with a render after each):
+
+| | Before tuning | After tuning |
+|---|---|---|
+| WebView2 private memory after load | 1,006 MB | 714 MB |
+| WebView2 private memory after 40 edits | 1,449 MB | 871 MB |
+| App private memory after 40 edits | 591 MB | 566 MB |
+
+What keeps memory down:
+- Incremental DOM patching, plus `content-visibility: auto` so off-screen blocks are not laid out or painted.
+- Editor text is copied only when rendering or saving, not on every keystroke.
+- The saved state is kept as a SHA-256 hash, not a second copy of the text.
+- HTML is posted as a plain string, with no JSON envelope copy.
+- The undo stack is limited to 2,000 entries.
+- The Mermaid SVG cache is bounded by size.
+- The WebView2 memory target is set to Low while the window is minimized or inactive.
+- `System.GC.ConserveMemory=5` makes the GC compact the Large Object Heap more eagerly.
+
+Note: on machines with GPU overlay/driver DLLs injected into every process, a large share of the app's
+private memory is independent of the editor (about 490 MB with an empty document on the test machine).
+
 ## Project tracking
 
 Stories, issues, and assumptions are tracked in [GitHub Issues](https://github.com/Kalisen/markdown-editor/issues)
-(label `Assumption` for decisions made without review, also listed in [docs/ASSUMPTIONS.md](docs/ASSUMPTIONS.md)).
+(label `Assumption` for decisions made without review, also listed in [docs/ASSUMPTIONS.md](docs/ASSUMPTIONS.md)). Review pass findings are summarized in
+[docs/REVIEW-PASSES.md](docs/REVIEW-PASSES.md).
