@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.IO;
-using System.Text.Json;
 using MarkdownEditor.App.Infrastructure;
 using MarkdownEditor.Core.Plugins;
 using MarkdownEditor.Core.Rendering;
@@ -16,22 +15,29 @@ namespace MarkdownEditor.App.Preview;
 /// </summary>
 internal sealed class PreviewHost(WebView2 view, IReadOnlyList<LoadedPlugin> plugins, PreviewTheme theme)
 {
-    private const string MessageTypeProperty = "type";
-    private const string HrefProperty = "href";
-    private static readonly HashSet<string> ExternalSchemes = [Uri.UriSchemeHttp, Uri.UriSchemeHttps, Uri.UriSchemeMailto];
-
     private bool _ready;
     private string? _pendingHtml;
     private string? _documentFolder;
 
     public event EventHandler? Ready;
 
-    public async Task InitializeAsync()
-    {
-        var env = await CoreWebView2Environment.CreateAsync(userDataFolder: AppPaths.WebViewData);
-        await view.EnsureCoreWebView2Async(env);
-        var core = view.CoreWebView2;
+    /// <summary>Raised when a preview link targets a Markdown file in the document folder.</summary>
+    public event EventHandler<string>? OpenDocumentRequested;
 
+    /// <returns>Null on success, otherwise the reason the preview is unavailable.</returns>
+    public async Task<string?> InitializeAsync()
+    {
+        try
+        {
+            var env = await CoreWebView2Environment.CreateAsync(userDataFolder: AppPaths.WebViewData);
+            await view.EnsureCoreWebView2Async(env);
+        }
+        catch (Exception ex) // runtime missing, blocked user-data folder, browser process failure...
+        {
+            return ex.Message;
+        }
+
+        var core = view.CoreWebView2;
         Directory.CreateDirectory(AppPaths.PreviewFolder);
         await File.WriteAllTextAsync(Path.Combine(AppPaths.PreviewFolder, AppPaths.PreviewPageName),
             PreviewPageBuilder.Build(theme, plugins.Select(p => p.Plugin)));
@@ -40,11 +46,15 @@ internal sealed class PreviewHost(WebView2 view, IReadOnlyList<LoadedPlugin> plu
             core.SetVirtualHostNameToFolderMapping(PreviewHosts.PluginHost(p.Plugin.Id), p.Folder, CoreWebView2HostResourceAccessKind.Allow);
         MapDocumentFolder();
 
-        core.Settings.AreDefaultContextMenusEnabled = true;
         core.Settings.IsStatusBarEnabled = false;
         core.WebMessageReceived += OnWebMessage;
-        core.NewWindowRequested += (_, e) => { e.Handled = true; OpenExternal(e.Uri); };
+        core.NewWindowRequested += (_, e) =>
+        {
+            e.Handled = true;
+            Follow(e.Uri);
+        };
         core.Navigate(PreviewHosts.AppOrigin + AppPaths.PreviewPageName);
+        return null;
     }
 
     public void SetDocumentFolder(string? folder)
@@ -79,26 +89,31 @@ internal sealed class PreviewHost(WebView2 view, IReadOnlyList<LoadedPlugin> plu
 
     private void OnWebMessage(object? sender, CoreWebView2WebMessageReceivedEventArgs e)
     {
-        using var message = JsonDocument.Parse(e.WebMessageAsJson);
-        var root = message.RootElement;
-        switch (root.GetProperty(MessageTypeProperty).GetString())
+        switch (PreviewMessages.TryParse(e.WebMessageAsJson))
         {
-            case PreviewMessages.ReadyType:
+            case { Kind: PreviewInboundKind.Ready }:
                 _ready = true;
                 if (_pendingHtml is not null) Render(_pendingHtml);
                 _pendingHtml = null;
                 Ready?.Invoke(this, EventArgs.Empty);
                 break;
-            case PreviewMessages.OpenLinkType:
-                OpenExternal(root.GetProperty(HrefProperty).GetString());
+            case { Kind: PreviewInboundKind.OpenLink, Href: var href }:
+                Follow(href);
                 break;
         }
     }
 
-    private static void OpenExternal(string? href)
+    private void Follow(string? href)
     {
-        if (Uri.TryCreate(href, UriKind.Absolute, out var uri) && ExternalSchemes.Contains(uri.Scheme)
-            && !uri.Host.EndsWith(PreviewHosts.PluginHostSuffix, StringComparison.OrdinalIgnoreCase))
-            Process.Start(new ProcessStartInfo(uri.AbsoluteUri) { UseShellExecute = true });
+        var action = PreviewLinkPolicy.Classify(href, _documentFolder);
+        switch (action.Kind)
+        {
+            case LinkActionKind.OpenExternal:
+                Process.Start(new ProcessStartInfo(action.Target!) { UseShellExecute = true });
+                break;
+            case LinkActionKind.OpenDocument:
+                OpenDocumentRequested?.Invoke(this, action.Target!);
+                break;
+        }
     }
 }

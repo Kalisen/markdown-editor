@@ -17,8 +17,8 @@ public sealed class PluginLoader
         if (!Directory.Exists(pluginsRoot)) return PluginCatalog.Empty;
 
         var catalog = new PluginCatalogBuilder();
-        foreach (var folder in Directory.EnumerateDirectories(pluginsRoot).Order(StringComparer.OrdinalIgnoreCase))
-        foreach (var dll in Directory.EnumerateFiles(folder, AssemblySearchPattern))
+        foreach (var folder in SafeEnumerate(catalog, pluginsRoot, Directory.GetDirectories).Order(StringComparer.OrdinalIgnoreCase))
+        foreach (var dll in SafeEnumerate(catalog, folder, f => Directory.GetFiles(f, AssemblySearchPattern)))
         {
             try
             {
@@ -31,6 +31,19 @@ public sealed class PluginLoader
             }
         }
         return catalog.Build();
+    }
+
+    private static string[] SafeEnumerate(PluginCatalogBuilder catalog, string path, Func<string, string[]> list)
+    {
+        try
+        {
+            return list(path);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            catalog.Fail(path, ex.Message);
+            return [];
+        }
     }
 
     internal static IReadOnlyList<IMarkdownPlugin> Instantiate(Assembly assembly) =>
