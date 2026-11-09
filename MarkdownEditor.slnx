@@ -13,6 +13,7 @@
     <Project Path="plugins/MarkdownEditor.Plugin.Tables/MarkdownEditor.Plugin.Tables.csproj" />
     <Project Path="plugins/MarkdownEditor.Plugin.TagFilter/MarkdownEditor.Plugin.TagFilter.csproj" />
     <Project Path="plugins/MarkdownEditor.Plugin.TaskLists/MarkdownEditor.Plugin.TaskLists.csproj" />
+    <Project Path="plugins/MarkdownEditor.Plugin.Toc/MarkdownEditor.Plugin.Toc.csproj" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/MarkdownEditor.App/MarkdownEditor.App.csproj" />
@@ -35,5 +36,6 @@
     <Project Path="tests/MarkdownEditor.Plugin.Tables.Tests/MarkdownEditor.Plugin.Tables.Tests.csproj" />
     <Project Path="tests/MarkdownEditor.Plugin.TagFilter.Tests/MarkdownEditor.Plugin.TagFilter.Tests.csproj" />
     <Project Path="tests/MarkdownEditor.Plugin.TaskLists.Tests/MarkdownEditor.Plugin.TaskLists.Tests.csproj" />
+    <Project Path="tests/MarkdownEditor.Plugin.Toc.Tests/MarkdownEditor.Plugin.Toc.Tests.csproj" />
   </Folder>
 </Solution>
