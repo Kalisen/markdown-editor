@@ -51,8 +51,13 @@
     const a = e.target.closest && e.target.closest('a[href]');
     if (!a) return;
     const href = a.getAttribute('href');
-    if (href.startsWith('#')) return;
     e.preventDefault();
+    if (href.startsWith('#')) {
+      // In-page anchors (headings, footnotes) scroll within the preview; no navigation happens.
+      const target = document.getElementById(decodeURIComponent(href.slice(1)));
+      if (target) target.scrollIntoView({ block: 'start' });
+      return;
+    }
     post({ type: 'open-link', href });
   });
 
