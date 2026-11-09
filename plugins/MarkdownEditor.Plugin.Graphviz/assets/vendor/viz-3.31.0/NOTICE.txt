@@ -1,0 +1,7 @@
+Viz.js 3.31.0 (https://github.com/mdaines/viz-js), MIT License, Copyright (c) Michael Daines.
+Taken unmodified from the npm package @viz-js/viz 3.31.0 (dist/viz-global.js, SHA-1 of the tarball:
+74cd9eab03b1f6f03822a6f68622b74b9786104a).
+
+This distribution contains other software in object code form:
+- Graphviz (https://www.graphviz.org), Eclipse Public License 1.0. Source: https://gitlab.com/graphviz/graphviz
+- Expat (https://libexpat.github.io), MIT License.

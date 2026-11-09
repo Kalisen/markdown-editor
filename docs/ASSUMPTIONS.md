@@ -80,3 +80,7 @@ No YAML library is added: top-level `key: value` scalars, inline lists `[a, b]` 
 ## [#74](https://github.com/Kalisen/markdown-editor/issues/74) Export format
 
 PDF uses WebView2 PrintToPdf of the live preview (print styles force light colours). HTML export is a single file containing the rendered DOM and the inlined core + plugin stylesheets; scripts are not included, and KaTeX fonts are not embedded (KaTeX MathML output is kept as the fallback).
+
+## [#76](https://github.com/Kalisen/markdown-editor/issues/76) Diagram engines: Graphviz yes, PlantUML no
+
+PlantUML needs Java or a remote server (which would send document content off the machine), so it is not implemented. Graphviz runs offline via WebAssembly, which requires adding 'wasm-unsafe-eval' to the preview CSP script-src; script sources stay restricted to the app and plugin hosts.

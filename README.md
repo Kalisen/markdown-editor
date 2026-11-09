@@ -24,6 +24,7 @@ A Windows 11 desktop Markdown editor/viewer with a live split preview, compliant
     highlight.js 11.12.0 bundled), **Math** (`math`, KaTeX 0.19.1 bundled).
   - **Table of contents** (`toc`): `[TOC]` / `[[_TOC_]]` renders a nested list of heading links.
   - **Front matter** (`front-matter`): a leading YAML block is shown as a metadata table (as on GitHub).
+  - **Graphviz diagrams** (`graphviz`): ```` ```dot ```` / ```` ```graphviz ```` blocks drawn with a bundled Viz.js 3.31.0 (WebAssembly).
   - **Wikilinks** (`wikilinks`): Obsidian-style `[[Note]]`, `[[Note|alias]]`, `[[Note#Heading]]` open the note in the editor.
   - **Mermaid diagrams** (`mermaid`) — ```` ```mermaid ```` fenced blocks rendered with Mermaid 12.3.0 (bundled, offline), inline syntax errors, light/dark theme.
 
@@ -119,7 +120,8 @@ Plugins are trusted code; a plugin that fails to load or configure is skipped an
 ## Security model
 
 - **Documents are untrusted.** CommonMark allows raw HTML, so the preview shell enforces a strict
-  Content-Security-Policy: scripts only from the app and plugin hosts (no inline script, no eval),
+  Content-Security-Policy: scripts only from the app and plugin hosts (no inline script, no eval; WebAssembly
+  compilation is allowed for bundled plugins such as Graphviz),
   no network requests, frames, objects or forms. Images may load from the document folder or `https:`
   (remote images can reveal that a document was opened).
 - The preview cannot navigate away from its shell page; clicked links are classified by

@@ -1,0 +1,4 @@
+.markdown-body pre.graphviz-diagram { background: none; padding: 0; text-align: center; overflow-x: auto; font-family: inherit; }
+.markdown-body pre.graphviz-diagram svg { max-width: 100%; height: auto; }
+.markdown-body .graphviz-error { text-align: left; border: 1px solid #d1242f; border-left-width: 4px; border-radius: 6px; padding: 8px 12px; color: #d1242f; white-space: normal; }
+.markdown-body .graphviz-error pre { color: var(--fg, inherit); white-space: pre-wrap; margin: .5em 0 0; }

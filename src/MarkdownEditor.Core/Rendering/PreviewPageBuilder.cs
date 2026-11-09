@@ -28,7 +28,8 @@ public static class PreviewPageBuilder
     public static string ContentSecurityPolicy =>
         string.Join("; ",
             "default-src 'none'",
-            $"script-src {PreviewHosts.AppOrigin} {PluginOrigins}",
+            // 'wasm-unsafe-eval' lets bundled plugins compile WebAssembly (Graphviz); it does not allow eval or inline script.
+            $"script-src {PreviewHosts.AppOrigin} {PluginOrigins} 'wasm-unsafe-eval'",
             $"style-src {PreviewHosts.AppOrigin} {PluginOrigins} 'unsafe-inline'",
             $"font-src {PluginOrigins} data:",
             "img-src https: data:",
