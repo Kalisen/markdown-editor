@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.IO;
 using MarkdownEditor.App.Infrastructure;
+using MarkdownEditor.Core.Documents;
 using MarkdownEditor.Core.Plugins;
 using MarkdownEditor.Core.Rendering;
 using MarkdownEditor.Plugins.Abstractions.Preview;
@@ -17,6 +18,7 @@ internal sealed class PreviewHost(WebView2 view, IReadOnlyList<LoadedPlugin> plu
 {
     private const double ScrollEpsilon = 0.001;
 
+    private readonly MarkdownFileLocator _locator = new();
     private bool _ready;
     private double _lastScrollRatio = double.NaN;
     private string? _pendingHtml;
@@ -148,7 +150,8 @@ internal sealed class PreviewHost(WebView2 view, IReadOnlyList<LoadedPlugin> plu
                 Process.Start(new ProcessStartInfo(action.Target!) { UseShellExecute = true });
                 break;
             case LinkActionKind.OpenDocument:
-                OpenDocumentRequested?.Invoke(this, action.Target!);
+                // Missing targets (e.g. wikilinks to notes in other folders) are searched under the document folder.
+                OpenDocumentRequested?.Invoke(this, _locator.Locate(action.Target!, _documentFolder) ?? action.Target!);
                 break;
         }
     }

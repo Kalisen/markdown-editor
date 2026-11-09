@@ -72,3 +72,7 @@ No GitHub syntax exists for an in-document TOC; `[TOC]` (Typora/Python-Markdown)
 ## [#70](https://github.com/Kalisen/markdown-editor/issues/70) Front matter parsing scope
 
 No YAML library is added: top-level `key: value` scalars, inline lists `[a, b]` and block lists (`- item`) are tabulated; nested mappings are shown as their raw YAML text.
+
+## [#72](https://github.com/Kalisen/markdown-editor/issues/72) Wikilink resolution
+
+`[[Note]]` targets `Note.md` relative to the current document; if that file does not exist, the first `Note.md` found under the document's folder tree is opened (Obsidian-like shortest-path resolution, without a vault index). Embeds (`![[...]]`) are out of scope.
