@@ -81,4 +81,4 @@ Plugins are trusted code; a plugin that fails to load or configure is skipped an
 ## Project tracking
 
 Stories, issues, and assumptions are tracked in [GitHub Issues](https://github.com/Kalisen/markdown-editor/issues)
-(label `Assumption` for decisions made without review).
+(label `Assumption` for decisions made without review, also listed in [docs/ASSUMPTIONS.md](docs/ASSUMPTIONS.md)).
