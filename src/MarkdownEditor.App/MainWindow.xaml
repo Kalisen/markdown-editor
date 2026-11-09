@@ -21,6 +21,9 @@
                 <MenuItem Command="Save" />
                 <MenuItem Command="SaveAs" InputGestureText="Ctrl+Shift+S" />
                 <Separator />
+                <MenuItem Header="Export to _HTML..." Click="OnExportHtml" />
+                <MenuItem Header="Export to _PDF..." Click="OnExportPdf" />
+                <Separator />
                 <MenuItem Header="E_xit" Click="OnExit" />
             </MenuItem>
             <MenuItem Header="_Help">

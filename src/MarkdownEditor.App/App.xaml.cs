@@ -20,8 +20,9 @@ public partial class App : Application
         var active = catalog.Plugins.Where(p => renderer.ActivePlugins.Contains(p.Plugin)).ToList();
         var failures = catalog.Failures.Concat(renderer.Failures).ToList();
 
-        var session = new EditorSession(new FileDocumentStore(), new WpfUserPrompts());
-        var window = new MainWindow(session, renderer, active, failures, SystemTheme.Detect());
+        var prompts = new WpfUserPrompts();
+        var session = new EditorSession(new FileDocumentStore(), prompts);
+        var window = new MainWindow(session, prompts, renderer, active, failures, SystemTheme.Detect());
         MainWindow = window;
         window.Show();
 

@@ -76,3 +76,7 @@ No YAML library is added: top-level `key: value` scalars, inline lists `[a, b]` 
 ## [#72](https://github.com/Kalisen/markdown-editor/issues/72) Wikilink resolution
 
 `[[Note]]` targets `Note.md` relative to the current document; if that file does not exist, the first `Note.md` found under the document's folder tree is opened (Obsidian-like shortest-path resolution, without a vault index). Embeds (`![[...]]`) are out of scope.
+
+## [#74](https://github.com/Kalisen/markdown-editor/issues/74) Export format
+
+PDF uses WebView2 PrintToPdf of the live preview (print styles force light colours). HTML export is a single file containing the rendered DOM and the inlined core + plugin stylesheets; scripts are not included, and KaTeX fonts are not embedded (KaTeX MathML output is kept as the fallback).

@@ -1,7 +1,9 @@
 using System.Diagnostics;
 using System.IO;
+using System.Text.Json;
 using MarkdownEditor.App.Infrastructure;
 using MarkdownEditor.Core.Documents;
+using MarkdownEditor.Core.Export;
 using MarkdownEditor.Core.Plugins;
 using MarkdownEditor.Core.Rendering;
 using MarkdownEditor.Plugins.Abstractions.Preview;
@@ -83,6 +85,35 @@ internal sealed class PreviewHost(WebView2 view, IReadOnlyList<LoadedPlugin> plu
         if (string.Equals(e.Uri, ShellUrl, StringComparison.OrdinalIgnoreCase)) return;
         e.Cancel = true;
         if (e.IsUserInitiated) Follow(e.Uri);
+    }
+
+    /// <summary>Script evaluated in the page (host-side, not subject to the page CSP) to capture the rendered preview.</summary>
+    private const string SnapshotScript =
+        "JSON.stringify({ html: document.getElementById('" + PreviewPageBuilder.ContentElementId + "').innerHTML, " +
+        "styles: Array.from(document.querySelectorAll('link[rel=stylesheet]'), l => l.href) })";
+
+    /// <returns>The rendered content and stylesheet URLs, or null when the preview is not ready.</returns>
+    public async Task<PreviewSnapshot?> SnapshotAsync()
+    {
+        if (!_ready) return null;
+        var json = JsonSerializer.Deserialize<string>(await view.CoreWebView2.ExecuteScriptAsync(SnapshotScript));
+        if (json is null) return null;
+        using var doc = JsonDocument.Parse(json);
+        var styles = doc.RootElement.GetProperty("styles").EnumerateArray().Select(e => e.GetString()!).ToList();
+        return new PreviewSnapshot(doc.RootElement.GetProperty("html").GetString() ?? string.Empty, styles);
+    }
+
+    /// <summary>Resolves stylesheet URLs of the preview to files (shell folder and plugin folders).</summary>
+    public PreviewAssetResolver AssetResolver => new(AppPaths.PreviewFolder, plugins.ToDictionary(p => p.Plugin.Id, p => p.Folder));
+
+    /// <summary>Prints the live preview (print styles force light colours) to a PDF file.</summary>
+    public async Task<bool> PrintToPdfAsync(string path)
+    {
+        if (!_ready) return false;
+        var settings = view.CoreWebView2.Environment.CreatePrintSettings();
+        settings.ShouldPrintBackgrounds = true;
+        settings.ShouldPrintHeaderAndFooter = false;
+        return await view.CoreWebView2.PrintToPdfAsync(path, settings);
     }
 
     public void SetDocumentFolder(string? folder)

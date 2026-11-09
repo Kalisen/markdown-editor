@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.IO;
 using System.Text;
 using System.Windows;
 using System.Windows.Input;
@@ -6,6 +7,7 @@ using System.Windows.Threading;
 using MarkdownEditor.App.Editing;
 using MarkdownEditor.App.Preview;
 using MarkdownEditor.Core.Editing;
+using MarkdownEditor.Core.Export;
 using MarkdownEditor.Core.Plugins;
 using MarkdownEditor.Core.Rendering;
 
@@ -19,10 +21,12 @@ public partial class MainWindow : Window
     private const int UndoLimit = 2000;
 
     private readonly EditorSession _session;
+    private readonly IUserPrompts _prompts;
     private readonly BackgroundRenderer _renderer;
     private readonly IReadOnlyList<LoadedPlugin> _plugins;
     private readonly IReadOnlyList<PluginLoadFailure> _failures;
     private readonly PreviewHost _preview;
+    private readonly PreviewTheme _theme;
     private readonly DispatcherTimer _renderTimer;
     private bool _loadingDocument;
     private bool _closeConfirmed;
@@ -33,11 +37,13 @@ public partial class MainWindow : Window
     /// </summary>
     private bool _editorAhead;
 
-    internal MainWindow(EditorSession session, MarkdownRenderer renderer, IReadOnlyList<LoadedPlugin> plugins,
+    internal MainWindow(EditorSession session, IUserPrompts prompts, MarkdownRenderer renderer, IReadOnlyList<LoadedPlugin> plugins,
         IReadOnlyList<PluginLoadFailure> failures, PreviewTheme theme)
     {
         InitializeComponent();
         _session = session;
+        _prompts = prompts;
+        _theme = theme;
         _renderer = new BackgroundRenderer(renderer.Render);
         _plugins = plugins;
         _failures = failures;
@@ -143,6 +149,41 @@ public partial class MainWindow : Window
     }
 
     private void OnExit(object sender, RoutedEventArgs e) => Close();
+
+    private async void OnExportHtml(object sender, RoutedEventArgs e) => await ExportAsync(ExportFormat.Html);
+
+    private async void OnExportPdf(object sender, RoutedEventArgs e) => await ExportAsync(ExportFormat.Pdf);
+
+    private async Task ExportAsync(ExportFormat format)
+    {
+        var name = Path.GetFileNameWithoutExtension(_session.Document.DisplayName);
+        if (_prompts.AskExportPath(name + ExportFormats.Extension(format), format) is not { } path) return;
+        RenderNow(); // export what the editor currently shows
+        try
+        {
+            var exported = format switch
+            {
+                ExportFormat.Pdf => await _preview.PrintToPdfAsync(path),
+                _ => await ExportHtmlAsync(path, name),
+            };
+            if (exported) StatusText.Content = $"Exported to {path}";
+            else _prompts.ShowError("The preview is not ready yet; try exporting again in a moment.");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _prompts.ShowError($"Could not export to '{path}': {ex.Message}");
+        }
+    }
+
+    private async Task<bool> ExportHtmlAsync(string path, string title)
+    {
+        if (await _preview.SnapshotAsync() is not { } snapshot) return false;
+        var resolver = _preview.AssetResolver;
+        var html = HtmlExportBuilder.Build(title, snapshot, _theme,
+            url => resolver.Resolve(url) is { } file && File.Exists(file) ? File.ReadAllText(file) : null);
+        await File.WriteAllTextAsync(path, html);
+        return true;
+    }
 
     private async void OnDrop(object sender, DragEventArgs e)
     {

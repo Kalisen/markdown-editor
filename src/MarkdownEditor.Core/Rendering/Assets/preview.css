@@ -16,3 +16,10 @@ table { border-collapse: collapse; }
 th, td { border: 1px solid var(--border); padding: 6px 13px; }
 /* Skip layout/paint (and its memory) for off-screen blocks; sizes are remembered once rendered. */
 .markdown-body > * { content-visibility: auto; contain-intrinsic-size: auto 1.5em; }
+/* Printing / PDF export: always light, all content rendered. */
+@media print {
+  :root, html[data-theme="dark"] { --fg: #1f2328; --bg: #ffffff; --muted: #59636e; --border: #d1d9e0; --code-bg: #f6f8fa; --link: #0969da; }
+  .markdown-body { max-width: none; padding: 0; }
+  .markdown-body > * { content-visibility: visible; }
+  pre, table, blockquote, img, svg { break-inside: avoid; }
+}

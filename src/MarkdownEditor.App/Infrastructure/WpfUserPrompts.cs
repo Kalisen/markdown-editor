@@ -1,6 +1,7 @@
 using System.Windows;
 using MarkdownEditor.Core.Documents;
 using MarkdownEditor.Core.Editing;
+using MarkdownEditor.Core.Export;
 using Microsoft.Win32;
 
 namespace MarkdownEditor.App.Infrastructure;
@@ -22,6 +23,17 @@ internal sealed class WpfUserPrompts : IUserPrompts
             Filter = DocumentFileTypes.DialogFilter,
             FileName = suggestedName,
             DefaultExt = DocumentFileTypes.DefaultExtension,
+        };
+        return dialog.ShowDialog() == true ? dialog.FileName : null;
+    }
+
+    public string? AskExportPath(string suggestedName, ExportFormat format)
+    {
+        var dialog = new SaveFileDialog
+        {
+            Filter = ExportFormats.DialogFilter(format),
+            FileName = suggestedName,
+            DefaultExt = ExportFormats.Extension(format),
         };
         return dialog.ShowDialog() == true ? dialog.FileName : null;
     }
