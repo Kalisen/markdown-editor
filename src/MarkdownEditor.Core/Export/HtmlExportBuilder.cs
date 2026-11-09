@@ -11,6 +11,8 @@ public sealed record PreviewSnapshot(string ContentHtml, IReadOnlyList<string> S
 /// <summary>Builds a single, script-free HTML file from a preview snapshot with its stylesheets inlined.</summary>
 public static class HtmlExportBuilder
 {
+    private const string LineFeed = "\n";
+
     /// <param name="readStylesheet">Returns the CSS text for a stylesheet URL, or null if it cannot be resolved.</param>
     public static string Build(string title, PreviewSnapshot snapshot, PreviewTheme theme, Func<string, string?> readStylesheet)
     {
@@ -33,8 +35,7 @@ public static class HtmlExportBuilder
             </main>
             </body>
             </html>
-            """.ReplaceLineEndings("
-"); // raw string newlines follow the source file's line endings
+            """.ReplaceLineEndings(LineFeed); // raw string newlines follow the source file's line endings
     }
 }
 
