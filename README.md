@@ -20,6 +20,7 @@ A Windows 11 desktop Markdown editor/viewer with a live split preview, compliant
   - GitHub.com extras: **Footnotes** (`footnotes`), **Alerts** (`alerts`), **Heading anchors**
     (`heading-anchors`), **Emoji shortcodes** (`emoji`), **Syntax highlighting** (`syntax-highlighting`,
     highlight.js 11.12.0 bundled), **Math** (`math`, KaTeX 0.19.1 bundled).
+  - **Table of contents** (`toc`): `[TOC]` / `[[_TOC_]]` renders a nested list of heading links.
   - **Mermaid diagrams** (`mermaid`) — ```` ```mermaid ```` fenced blocks rendered with Mermaid 12.3.0 (bundled, offline), inline syntax errors, light/dark theme.
 
 ## Build & run

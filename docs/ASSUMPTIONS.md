@@ -64,3 +64,7 @@ Mermaid diagrams render with securityLevel "strict" (no click handlers/HTML labe
 ## [#34](https://github.com/Kalisen/markdown-editor/issues/34) Remote https images are allowed in the preview
 
 Remote images (https) are allowed by the preview Content-Security-Policy so documents referencing online pictures render. This lets a document author learn when/where it is opened (tracking pixels). Accepted for a local editor; can become a setting later.
+
+## [#68](https://github.com/Kalisen/markdown-editor/issues/68) TOC marker syntax and heading ids
+
+No GitHub syntax exists for an in-document TOC; `[TOC]` (Typora/Python-Markdown) and `[[_TOC_]]` (GitLab) are supported. The TOC plugin assigns GitHub-style heading ids itself (same algorithm as heading-anchors), so it works with or without that plugin.
