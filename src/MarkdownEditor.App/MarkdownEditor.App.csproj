@@ -17,12 +17,13 @@
   <ItemGroup>
     <EmbeddedResource Include="Editing\Markdown.xshd" />
   </ItemGroup>
-  <!-- Build bundled plugins and stage them under plugins/<name>/ -->
+  <!-- Bundled plugins: restored and built as (non-referenced) dependencies, then staged under plugins/<name>/ -->
   <ItemGroup>
     <BundledPlugin Include="..\..\plugins\*\*.csproj" />
+    <ProjectReference Include="@(BundledPlugin)" ReferenceOutputAssembly="false" Private="false" />
   </ItemGroup>
   <Target Name="StageBundledPlugins" AfterTargets="Build">
-    <MSBuild Projects="@(BundledPlugin)" Targets="Build" Properties="Configuration=$(Configuration)">
+    <MSBuild Projects="@(BundledPlugin)" Targets="GetTargetPath" Properties="Configuration=$(Configuration)">
       <Output TaskParameter="TargetOutputs" ItemName="_PluginAssembly" />
     </MSBuild>
     <ItemGroup>
