@@ -68,3 +68,7 @@ Remote images (https) are allowed by the preview Content-Security-Policy so docu
 ## [#68](https://github.com/Kalisen/markdown-editor/issues/68) TOC marker syntax and heading ids
 
 No GitHub syntax exists for an in-document TOC; `[TOC]` (Typora/Python-Markdown) and `[[_TOC_]]` (GitLab) are supported. The TOC plugin assigns GitHub-style heading ids itself (same algorithm as heading-anchors), so it works with or without that plugin.
+
+## [#70](https://github.com/Kalisen/markdown-editor/issues/70) Front matter parsing scope
+
+No YAML library is added: top-level `key: value` scalars, inline lists `[a, b]` and block lists (`- item`) are tabulated; nested mappings are shown as their raw YAML text.

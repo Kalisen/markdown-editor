@@ -1,0 +1,5 @@
+.markdown-body table.front-matter { border-collapse: collapse; display: block; width: max-content; max-width: 100%; overflow: auto; margin: 0 0 1.5em; font-size: 90%; }
+.markdown-body table.front-matter th, .markdown-body table.front-matter td { border: 1px solid var(--border); padding: 4px 10px; vertical-align: top; text-align: left; }
+.markdown-body table.front-matter th { background: var(--code-bg); }
+.markdown-body table.front-matter ul { margin: 0; padding-left: 1.2em; }
+.markdown-body table.front-matter pre { margin: 0; padding: 4px 6px; }

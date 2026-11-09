@@ -4,6 +4,7 @@
     <Project Path="plugins/MarkdownEditor.Plugin.Autolinks/MarkdownEditor.Plugin.Autolinks.csproj" />
     <Project Path="plugins/MarkdownEditor.Plugin.Emoji/MarkdownEditor.Plugin.Emoji.csproj" />
     <Project Path="plugins/MarkdownEditor.Plugin.Footnotes/MarkdownEditor.Plugin.Footnotes.csproj" />
+    <Project Path="plugins/MarkdownEditor.Plugin.FrontMatter/MarkdownEditor.Plugin.FrontMatter.csproj" />
     <Project Path="plugins/MarkdownEditor.Plugin.HeadingAnchors/MarkdownEditor.Plugin.HeadingAnchors.csproj" />
     <Project Path="plugins/MarkdownEditor.Plugin.Images/MarkdownEditor.Plugin.Images.csproj" />
     <Project Path="plugins/MarkdownEditor.Plugin.Math/MarkdownEditor.Plugin.Math.csproj" />
@@ -27,6 +28,7 @@
     <Project Path="tests/MarkdownEditor.Plugin.Autolinks.Tests/MarkdownEditor.Plugin.Autolinks.Tests.csproj" />
     <Project Path="tests/MarkdownEditor.Plugin.Emoji.Tests/MarkdownEditor.Plugin.Emoji.Tests.csproj" />
     <Project Path="tests/MarkdownEditor.Plugin.Footnotes.Tests/MarkdownEditor.Plugin.Footnotes.Tests.csproj" />
+    <Project Path="tests/MarkdownEditor.Plugin.FrontMatter.Tests/MarkdownEditor.Plugin.FrontMatter.Tests.csproj" />
     <Project Path="tests/MarkdownEditor.Plugin.HeadingAnchors.Tests/MarkdownEditor.Plugin.HeadingAnchors.Tests.csproj" />
     <Project Path="tests/MarkdownEditor.Plugin.Images.Tests/MarkdownEditor.Plugin.Images.Tests.csproj" />
     <Project Path="tests/MarkdownEditor.Plugin.Math.Tests/MarkdownEditor.Plugin.Math.Tests.csproj" />
