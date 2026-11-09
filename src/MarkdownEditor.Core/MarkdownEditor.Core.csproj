@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MarkdownEditor.Plugins.Abstractions\MarkdownEditor.Plugins.Abstractions.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Rendering\Assets\*" LogicalName="MarkdownEditor.Core.Rendering.Assets.%(Filename)%(Extension)" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="MarkdownEditor.Core.Tests" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <ImagesPluginOutput>$(MSBuildThisFileDirectory)..\..\plugins\MarkdownEditor.Plugin.Images\bin\$(Configuration)\net10.0\</ImagesPluginOutput>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\MarkdownEditor.Core\MarkdownEditor.Core.csproj" />
+    <!-- Built (not referenced) so the loader integration test can load a real plugin from disk. -->
+    <ProjectReference Include="..\..\plugins\MarkdownEditor.Plugin.Images\MarkdownEditor.Plugin.Images.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Spec\commonmark-0.31.2.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <Target Name="StageTestPlugin" AfterTargets="Build">
+    <ItemGroup>
+      <_TestPluginFiles Include="$(ImagesPluginOutput)MarkdownEditor.Plugin.Images.*;$(ImagesPluginOutput)assets\**" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_TestPluginFiles)" DestinationFiles="@(_TestPluginFiles->'$(OutDir)TestPlugins\images\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+  </Target>
+</Project>

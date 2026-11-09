@@ -1,0 +1,16 @@
+<Project>
+  <!-- Shared settings for plugin projects: host-shared assemblies are not copied,
+       output is staged into the App's plugins/<PluginFolder> directory. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <PluginFolder>$(MSBuildProjectName.Replace('MarkdownEditor.Plugin.', '').ToLowerInvariant())</PluginFolder>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\src\MarkdownEditor.Plugins.Abstractions\MarkdownEditor.Plugins.Abstractions.csproj">
+      <Private>false</Private>
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </ProjectReference>
+    <PackageReference Include="Markdig" ExcludeAssets="runtime" />
+  </ItemGroup>
+</Project>
