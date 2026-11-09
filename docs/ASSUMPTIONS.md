@@ -61,4 +61,6 @@ Phase 2 (Mermaid, #7) is developed on branch feature/issue-7-mermaid-extension c
 
 Mermaid diagrams render with securityLevel "strict" (no click handlers/HTML labels script execution). Rendered SVGs are cached per (source, theme) in the preview so typing elsewhere does not re-render unchanged diagrams. Only fenced blocks whose info string first word is exactly `mermaid` are treated as diagrams.
 
+## [#34](https://github.com/Kalisen/markdown-editor/issues/34) Remote https images are allowed in the preview
 
+Remote images (https) are allowed by the preview Content-Security-Policy so documents referencing online pictures render. This lets a document author learn when/where it is opened (tracking pixels). Accepted for a local editor; can become a setting later.
