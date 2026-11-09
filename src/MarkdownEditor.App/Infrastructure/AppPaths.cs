@@ -7,7 +7,6 @@ internal static class AppPaths
     private const string AppFolderName = "MarkdownEditor";
     private const string PreviewFolderName = "preview";
     private const string WebViewDataFolderName = "webview2";
-    public const string PreviewPageName = "index.html";
 
     public static string LocalData { get; } =
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), AppFolderName);

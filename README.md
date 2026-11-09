@@ -78,6 +78,19 @@ window.mdeditor.onRender(async (root) => { /* transform rendered content */ });
 
 Plugins are trusted code; a plugin that fails to load or configure is skipped and reported, never fatal.
 
+## Security model
+
+- **Documents are untrusted.** CommonMark allows raw HTML, so the preview shell enforces a strict
+  Content-Security-Policy: scripts only from the app and plugin hosts (no inline script, no eval),
+  no network requests, frames, objects or forms. Images may load from the document folder or `https:`
+  (remote images can reveal that a document was opened).
+- The preview cannot navigate away from its shell page; clicked links are classified by
+  `PreviewLinkPolicy` (http/https/mailto open in the browser, Markdown files open in the editor,
+  everything else is ignored). Messages from the page are validated and only accepted from the shell origin.
+- Release builds disable WebView2 DevTools, browser shortcuts, autofill and password saving.
+- **Plugins are trusted code** running with your privileges. Install the editor where only administrators
+  can write (e.g. `Program Files`) and only add plugins you trust to its `plugins` folder.
+
 ## Project tracking
 
 Stories, issues, and assumptions are tracked in [GitHub Issues](https://github.com/Kalisen/markdown-editor/issues)

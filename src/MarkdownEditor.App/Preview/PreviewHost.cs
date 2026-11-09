@@ -39,22 +39,45 @@ internal sealed class PreviewHost(WebView2 view, IReadOnlyList<LoadedPlugin> plu
 
         var core = view.CoreWebView2;
         Directory.CreateDirectory(AppPaths.PreviewFolder);
-        await File.WriteAllTextAsync(Path.Combine(AppPaths.PreviewFolder, AppPaths.PreviewPageName),
-            PreviewPageBuilder.Build(theme, plugins.Select(p => p.Plugin)));
+        foreach (var (name, content) in PreviewPageBuilder.Build(theme, plugins.Select(p => p.Plugin)).Files)
+            await File.WriteAllTextAsync(Path.Combine(AppPaths.PreviewFolder, name), content);
         core.SetVirtualHostNameToFolderMapping(PreviewHosts.AppHost, AppPaths.PreviewFolder, CoreWebView2HostResourceAccessKind.Allow);
         foreach (var p in plugins)
             core.SetVirtualHostNameToFolderMapping(PreviewHosts.PluginHost(p.Plugin.Id), p.Folder, CoreWebView2HostResourceAccessKind.Allow);
         MapDocumentFolder();
 
-        core.Settings.IsStatusBarEnabled = false;
+        Harden(core.Settings);
         core.WebMessageReceived += OnWebMessage;
         core.NewWindowRequested += (_, e) =>
         {
             e.Handled = true;
             Follow(e.Uri);
         };
-        core.Navigate(PreviewHosts.AppOrigin + AppPaths.PreviewPageName);
+        core.NavigationStarting += OnNavigationStarting;
+        core.Navigate(ShellUrl);
         return null;
+    }
+
+    private static string ShellUrl => PreviewHosts.AppOrigin + PreviewPageBuilder.PageFileName;
+
+    private static void Harden(CoreWebView2Settings settings)
+    {
+        settings.IsStatusBarEnabled = false;
+        settings.AreHostObjectsAllowed = false;
+        settings.IsPasswordAutosaveEnabled = false;
+        settings.IsGeneralAutofillEnabled = false;
+#if !DEBUG
+        settings.AreDevToolsEnabled = false;
+        settings.AreBrowserAcceleratorKeysEnabled = false;
+#endif
+    }
+
+    /// <summary>The preview only ever shows the shell page; any other navigation is treated as a link click.</summary>
+    private void OnNavigationStarting(object? sender, CoreWebView2NavigationStartingEventArgs e)
+    {
+        if (string.Equals(e.Uri, ShellUrl, StringComparison.OrdinalIgnoreCase)) return;
+        e.Cancel = true;
+        if (e.IsUserInitiated) Follow(e.Uri);
     }
 
     public void SetDocumentFolder(string? folder)
@@ -89,6 +112,7 @@ internal sealed class PreviewHost(WebView2 view, IReadOnlyList<LoadedPlugin> plu
 
     private void OnWebMessage(object? sender, CoreWebView2WebMessageReceivedEventArgs e)
     {
+        if (!string.Equals(e.Source, ShellUrl, StringComparison.OrdinalIgnoreCase)) return;
         switch (PreviewMessages.TryParse(e.WebMessageAsJson))
         {
             case { Kind: PreviewInboundKind.Ready }:
