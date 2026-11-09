@@ -28,15 +28,18 @@
   window.mdeditor = {
     theme: document.documentElement.dataset.theme,
     onRender(cb) { callbacks.push(cb); },
-    _ready() {
-      if (host) {
-        host.addEventListener('message', (e) => {
-          const m = e.data;
-          if (m.type === 'render') update(m.html);
-          else if (m.type === 'scroll') scrollToRatio(m.ratio);
-        });
-      }
-      post({ type: 'ready' });
-    },
   };
+
+  // Plugin scripts are loaded synchronously after this file; DOMContentLoaded fires once they have all
+  // registered their callbacks. (No inline script: the page CSP forbids it.)
+  document.addEventListener('DOMContentLoaded', () => {
+    if (host) {
+      host.addEventListener('message', (e) => {
+        const m = e.data;
+        if (m.type === 'render') update(m.html);
+        else if (m.type === 'scroll') scrollToRatio(m.ratio);
+      });
+    }
+    post({ type: 'ready' });
+  });
 })();
