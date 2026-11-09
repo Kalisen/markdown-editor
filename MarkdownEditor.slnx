@@ -5,6 +5,7 @@
     <Project Path="plugins/MarkdownEditor.Plugin.Mermaid/MarkdownEditor.Plugin.Mermaid.csproj" />
     <Project Path="plugins/MarkdownEditor.Plugin.Strikethrough/MarkdownEditor.Plugin.Strikethrough.csproj" />
     <Project Path="plugins/MarkdownEditor.Plugin.Tables/MarkdownEditor.Plugin.Tables.csproj" />
+    <Project Path="plugins/MarkdownEditor.Plugin.TagFilter/MarkdownEditor.Plugin.TagFilter.csproj" />
     <Project Path="plugins/MarkdownEditor.Plugin.TaskLists/MarkdownEditor.Plugin.TaskLists.csproj" />
   </Folder>
   <Folder Name="/src/">
@@ -20,6 +21,7 @@
     <Project Path="tests/MarkdownEditor.Plugin.Mermaid.Tests/MarkdownEditor.Plugin.Mermaid.Tests.csproj" />
     <Project Path="tests/MarkdownEditor.Plugin.Strikethrough.Tests/MarkdownEditor.Plugin.Strikethrough.Tests.csproj" />
     <Project Path="tests/MarkdownEditor.Plugin.Tables.Tests/MarkdownEditor.Plugin.Tables.Tests.csproj" />
+    <Project Path="tests/MarkdownEditor.Plugin.TagFilter.Tests/MarkdownEditor.Plugin.TagFilter.Tests.csproj" />
     <Project Path="tests/MarkdownEditor.Plugin.TaskLists.Tests/MarkdownEditor.Plugin.TaskLists.Tests.csproj" />
   </Folder>
 </Solution>
