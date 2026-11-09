@@ -1,0 +1,5 @@
+.markdown-body :is(h1, h2, h3, h4, h5, h6)[id] { position: relative; scroll-margin-top: 1em; }
+.markdown-body .heading-anchor { position: absolute; left: -22px; padding-right: 6px; opacity: 0; color: var(--fg); }
+.markdown-body .heading-anchor svg { fill: currentColor; vertical-align: middle; }
+.markdown-body :is(h1, h2, h3, h4, h5, h6):hover .heading-anchor,
+.markdown-body .heading-anchor:focus { opacity: 1; }
