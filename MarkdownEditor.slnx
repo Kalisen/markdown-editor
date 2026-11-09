@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/plugins/">
     <Project Path="plugins/MarkdownEditor.Plugin.Images/MarkdownEditor.Plugin.Images.csproj" />
+    <Project Path="plugins/MarkdownEditor.Plugin.Mermaid/MarkdownEditor.Plugin.Mermaid.csproj" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/MarkdownEditor.App/MarkdownEditor.App.csproj" />
@@ -11,5 +12,6 @@
     <Project Path="tests/MarkdownEditor.App.Tests/MarkdownEditor.App.Tests.csproj" />
     <Project Path="tests/MarkdownEditor.Core.Tests/MarkdownEditor.Core.Tests.csproj" />
     <Project Path="tests/MarkdownEditor.Plugin.Images.Tests/MarkdownEditor.Plugin.Images.Tests.csproj" />
+    <Project Path="tests/MarkdownEditor.Plugin.Mermaid.Tests/MarkdownEditor.Plugin.Mermaid.Tests.csproj" />
   </Folder>
 </Solution>
