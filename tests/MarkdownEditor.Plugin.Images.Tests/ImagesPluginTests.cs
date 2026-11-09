@@ -41,6 +41,7 @@ public class ImagesPluginTests
     [InlineData("x")]
     [InlineData("=x")]
     [InlineData("=axb")]
+    [InlineData("=99999999999x10")]
     public void Non_hint_titles_are_not_size_hints(string? title) =>
         Assert.False(ImageSizeHint.TryParse(title, out _));
 

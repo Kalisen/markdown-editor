@@ -22,7 +22,7 @@
     const href = a.getAttribute('href');
     if (href.startsWith('#')) return;
     e.preventDefault();
-    post({ type: 'open-link', href: a.href });
+    post({ type: 'open-link', href });
   });
 
   window.mdeditor = {

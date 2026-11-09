@@ -45,7 +45,12 @@ public partial class MainWindow : Window
         Editor.TextArea.TextView.ScrollOffsetChanged += (_, _) => SyncScroll();
         _session.DocumentChanged += (_, _) => LoadDocument();
         Drop += OnDrop;
-        Loaded += async (_, _) => await _preview.InitializeAsync();
+        _preview.OpenDocumentRequested += async (_, path) => await _session.OpenAsync(path);
+        Loaded += async (_, _) =>
+        {
+            if (await _preview.InitializeAsync() is { } error)
+                StatusText.Content = $"Preview unavailable: {error}";
+        };
 
         LoadDocument();
         StatusText.Content = failures.Count == 0
