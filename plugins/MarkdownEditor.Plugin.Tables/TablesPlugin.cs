@@ -1,10 +1,11 @@
 using Markdig;
+using Markdig.Renderers;
 using MarkdownEditor.Plugins.Abstractions;
 using MarkdownEditor.Plugins.Abstractions.Preview;
 
 namespace MarkdownEditor.Plugin.Tables;
 
-/// <summary>GitHub Flavored Markdown pipe tables, with column alignment.</summary>
+/// <summary>GitHub Flavored Markdown tables (GFM spec 0.29, section 4.10), with column alignment.</summary>
 public sealed class TablesPlugin : IMarkdownPlugin
 {
     public const string PluginId = "tables";
@@ -14,11 +15,25 @@ public sealed class TablesPlugin : IMarkdownPlugin
 
     public string Name => "Tables (GFM)";
 
-    public Version Version => new(1, 0, 0);
+    public Version Version => new(1, 1, 0);
 
     public IReadOnlyList<PreviewAsset> PreviewAssets { get; } = [PreviewAsset.Stylesheet(StylesheetPath)];
 
-    // GFM requires the delimiter row, so a header row alone is not a table.
     public void ConfigurePipeline(MarkdownPipelineBuilder builder) =>
-        builder.UsePipeTables(new Markdig.Extensions.Tables.PipeTableOptions { RequireHeaderSeparator = true });
+        builder.Extensions.AddIfNotAlready<GfmTableExtension>();
+}
+
+internal sealed class GfmTableExtension : IMarkdownExtension
+{
+    public void Setup(MarkdownPipelineBuilder pipeline)
+    {
+        // Before the thematic break / list parsers so delimiter rows such as "-|-" are seen first.
+        if (!pipeline.BlockParsers.Contains<GfmTableParser>()) pipeline.BlockParsers.Insert(0, new GfmTableParser());
+    }
+
+    public void Setup(MarkdownPipeline pipeline, IMarkdownRenderer renderer)
+    {
+        if (renderer is HtmlRenderer html && !html.ObjectRenderers.Contains<GfmTableRenderer>())
+            html.ObjectRenderers.Add(new GfmTableRenderer());
+    }
 }

@@ -1,4 +1,5 @@
 using Markdig;
+using MarkdownEditor.Tests.Shared;
 
 namespace MarkdownEditor.Plugin.Tables.Tests;
 
@@ -18,9 +19,9 @@ public class TablesPluginTests
 
         Assert.Contains("<thead>", html);
         Assert.Contains("<tbody>", html);
-        Assert.Contains("<th style=\"text-align: right;\">Turn</th>", html);
-        Assert.Contains("<td style=\"text-align: left;\">b</td>", html);
-        Assert.Contains("<td style=\"text-align: center;\">y</td>", html);
+        Assert.Contains("<th align=\"right\">Turn</th>", html);
+        Assert.Contains("<td align=\"left\">b</td>", html);
+        Assert.Contains("<td align=\"center\">y</td>", html);
         Assert.Equal(3, html.Split("<tr>").Length - 1);
     }
 
@@ -37,6 +38,31 @@ public class TablesPluginTests
     [InlineData("| a | b |\n")]
     public void Pipes_without_delimiter_row_are_not_a_table(string markdown) =>
         Assert.DoesNotContain("<table>", Render(markdown));
+
+    [Fact]
+    public void Earlier_paragraph_lines_stay_a_paragraph() =>
+        Assert.StartsWith("<p>intro</p>\n<table>", Render("intro\n| a | b |\n| - | - |\n| 1 | 2 |\n"));
+
+    [Theory]
+    [InlineData("> | a | b |\n> | - | - |\n> | 1 | 2 |\n", "<blockquote>\n<table>")]
+    [InlineData("- item\n\n  | a | b |\n  | - | - |\n  | 1 | 2 |\n", "<table>")]
+    public void Tables_nest_in_containers(string markdown, string expected) =>
+        Assert.Contains(expected, Render(markdown));
+
+    [Fact]
+    public void Heading_ends_the_table() =>
+        Assert.EndsWith("</table>\n<h2>next</h2>\n", Render("| a |\n| - |\n| 1 |\n## next\n"));
+
+    [Fact]
+    public void Indented_delimiter_row_is_not_a_table() =>
+        Assert.DoesNotContain("<table>", Render("| a | b |\n    | - | - |\n"));
+
+    public static TheoryData<GfmSpec.Example> SpecExamples() => GfmSpec.For("table");
+
+    [Theory]
+    [MemberData(nameof(SpecExamples))]
+    public void Gfm_spec_table_examples(GfmSpec.Example example) =>
+        Assert.Equal(GfmSpec.Normalize(example.Html), GfmSpec.Normalize(Render(example.Markdown)));
 
     [Fact]
     public void Declared_stylesheet_exists() =>
