@@ -5,18 +5,20 @@ namespace MarkdownEditor.Core.Tests.Rendering;
 public class BackgroundRendererTests
 {
     [Fact]
-    public async Task Renders_off_the_calling_thread()
+    public async Task Does_not_block_the_caller_while_rendering()
     {
-        var caller = Environment.CurrentManagedThreadId;
-        var renderThread = 0;
+        using var gate = new ManualResetEventSlim();
         var renderer = new BackgroundRenderer(md =>
         {
-            renderThread = Environment.CurrentManagedThreadId;
+            gate.Wait(TestContext.Current.CancellationToken);
             return md.ToUpperInvariant();
         });
 
-        Assert.Equal("A", await renderer.RenderAsync("a"));
-        Assert.NotEqual(caller, renderThread);
+        var pending = renderer.RenderAsync("a"); // would deadlock if rendering ran on the caller
+
+        Assert.False(pending.IsCompleted);
+        gate.Set();
+        Assert.Equal("A", await pending);
     }
 
     [Fact]
