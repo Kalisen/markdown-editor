@@ -32,7 +32,7 @@ public class PreviewPageBuilderTests
 
     [Theory]
     [InlineData("default-src 'none'")]
-    [InlineData("script-src https://app.mdeditor.local/ https://*.plugin.mdeditor.local;")]
+    [InlineData("script-src https://app.mdeditor.local/ https://*.plugin.mdeditor.local 'wasm-unsafe-eval';")]
     [InlineData("connect-src 'none'")]
     [InlineData("frame-src 'none'")]
     [InlineData("object-src 'none'")]
@@ -45,6 +45,8 @@ public class PreviewPageBuilderTests
     public void Csp_never_allows_inline_or_eval_script()
     {
         var script = PreviewPageBuilder.ContentSecurityPolicy.Split("; ").Single(d => d.StartsWith("script-src"));
-        Assert.DoesNotContain("unsafe", script);
+        Assert.DoesNotContain("'unsafe-eval'", script);
+        Assert.DoesNotContain("'unsafe-inline'", script);
+        Assert.Contains("'wasm-unsafe-eval'", script);
     }
 }
