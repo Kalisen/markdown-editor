@@ -8,6 +8,7 @@
     <Project Path="plugins/MarkdownEditor.Plugin.Images/MarkdownEditor.Plugin.Images.csproj" />
     <Project Path="plugins/MarkdownEditor.Plugin.Mermaid/MarkdownEditor.Plugin.Mermaid.csproj" />
     <Project Path="plugins/MarkdownEditor.Plugin.Strikethrough/MarkdownEditor.Plugin.Strikethrough.csproj" />
+    <Project Path="plugins/MarkdownEditor.Plugin.SyntaxHighlighting/MarkdownEditor.Plugin.SyntaxHighlighting.csproj" />
     <Project Path="plugins/MarkdownEditor.Plugin.Tables/MarkdownEditor.Plugin.Tables.csproj" />
     <Project Path="plugins/MarkdownEditor.Plugin.TagFilter/MarkdownEditor.Plugin.TagFilter.csproj" />
     <Project Path="plugins/MarkdownEditor.Plugin.TaskLists/MarkdownEditor.Plugin.TaskLists.csproj" />
@@ -28,6 +29,7 @@
     <Project Path="tests/MarkdownEditor.Plugin.Images.Tests/MarkdownEditor.Plugin.Images.Tests.csproj" />
     <Project Path="tests/MarkdownEditor.Plugin.Mermaid.Tests/MarkdownEditor.Plugin.Mermaid.Tests.csproj" />
     <Project Path="tests/MarkdownEditor.Plugin.Strikethrough.Tests/MarkdownEditor.Plugin.Strikethrough.Tests.csproj" />
+    <Project Path="tests/MarkdownEditor.Plugin.SyntaxHighlighting.Tests/MarkdownEditor.Plugin.SyntaxHighlighting.Tests.csproj" />
     <Project Path="tests/MarkdownEditor.Plugin.Tables.Tests/MarkdownEditor.Plugin.Tables.Tests.csproj" />
     <Project Path="tests/MarkdownEditor.Plugin.TagFilter.Tests/MarkdownEditor.Plugin.TagFilter.Tests.csproj" />
     <Project Path="tests/MarkdownEditor.Plugin.TaskLists.Tests/MarkdownEditor.Plugin.TaskLists.Tests.csproj" />

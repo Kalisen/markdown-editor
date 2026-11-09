@@ -1,0 +1,2 @@
+/* Keep the preview's code block background; highlight.js themes only colour the tokens. */
+.markdown-body pre code.hljs { background: transparent; padding: 0; }
