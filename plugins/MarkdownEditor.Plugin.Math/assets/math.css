@@ -1,0 +1,3 @@
+.markdown-body div.math, .markdown-body pre.math-fence { overflow-x: auto; overflow-y: hidden; }
+/* A typeset ```math fence is no longer code: drop the code block styling. */
+.markdown-body pre.math-fence { background: none; padding: 0; font-family: inherit; font-size: inherit; }
