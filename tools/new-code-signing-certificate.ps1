@@ -5,7 +5,9 @@
 # Then store the .pfx in the repository secrets (see README > Code signing).
 param(
     [Parameter(Mandatory)][string]$OutputDirectory,
-    [int]$ValidityYears = 5
+    [int]$ValidityYears = 5,
+    # Prompted for when omitted.
+    [SecureString]$Password
 )
 
 $ErrorActionPreference = 'Stop'
@@ -20,7 +22,7 @@ if ((Test-Path $PfxPath) -or (Test-Path $CerPath)) {
     throw "$PfxPath or $CerPath already exists; move it away or pick another -OutputDirectory."
 }
 
-$Password = Read-Host -AsSecureString 'Password for the .pfx'
+if (-not $Password) { $Password = Read-Host -AsSecureString 'Password for the .pfx' }
 
 $Certificate = New-SelfSignedCertificate -Type CodeSigningCert -Subject $Subject `
     -KeyAlgorithm RSA -KeyLength 3072 -HashAlgorithm SHA256 -KeyExportPolicy Exportable `
@@ -34,7 +36,7 @@ finally {
     Remove-Item "Cert:\CurrentUser\My\$($Certificate.Thumbprint)"
 }
 
-Write-Host "Created $PfxPath and $CerPath (thumbprint $($Certificate.Thumbprint), expires $($Certificate.NotAfter:d))."
+Write-Host "Created $PfxPath and $CerPath (thumbprint $($Certificate.Thumbprint), expires $($Certificate.NotAfter.ToString('d')))."
 Write-Host 'Store it in the repository secrets:'
 Write-Host "  [Convert]::ToBase64String([IO.File]::ReadAllBytes('$PfxPath')) | gh secret set CODE_SIGNING_PFX_BASE64"
 Write-Host '  gh secret set CODE_SIGNING_PFX_PASSWORD'
