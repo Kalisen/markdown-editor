@@ -60,7 +60,7 @@ internal sealed class FrontMatterTableRenderer : HtmlObjectRenderer<YamlFrontMat
         if (entries.Count == 0) return;
 
         renderer.EnsureLine();
-        renderer.Write("<table class=\"").Write(TableClass).WriteLine("\">");
+        renderer.Write("<table class=\"").Write(TableClass).Write('"').WriteAttributes(block).WriteLine(">");
         renderer.WriteLine("<thead>").WriteLine("<tr>");
         foreach (var entry in entries) renderer.Write("<th>").Write(Encode(entry.Key)).WriteLine("</th>");
         renderer.WriteLine("</tr>").WriteLine("</thead>").WriteLine("<tbody>").WriteLine("<tr>");

@@ -9,7 +9,7 @@ internal sealed class GfmTableRenderer : HtmlObjectRenderer<GfmTable>
     protected override void Write(HtmlRenderer renderer, GfmTable table)
     {
         renderer.EnsureLine();
-        renderer.WriteLine("<table>");
+        renderer.Write("<table").WriteAttributes(table).WriteLine(">");
         var inBody = false;
         foreach (GfmTableRow row in table)
         {
@@ -23,7 +23,7 @@ internal sealed class GfmTableRenderer : HtmlObjectRenderer<GfmTable>
                 inBody = true;
             }
 
-            renderer.WriteLine("<tr>");
+            renderer.Write("<tr").WriteAttributes(row).WriteLine(">");
             var tag = row.IsHeader ? "th" : "td";
             for (var i = 0; i < row.Count; i++)
             {
