@@ -64,16 +64,16 @@ public partial class MainWindow : Window
         _renderTimer.Tick += (_, _) => RenderNow();
 
         Editor.TextChanged += OnEditorTextChanged;
-        _scrollSync = new ScrollSynchronizer(_preview.ScrollToLine,
-            line => Editor.ScrollToVerticalOffset(EditorLineGeometry.OffsetOf(Editor.TextArea.TextView, line)));
+        _scrollSync = new ScrollSynchronizer(_preview.ScrollTo,
+            position => Editor.ScrollToVerticalOffset(EditorLineGeometry.OffsetOf(Editor.TextArea.TextView, position)));
         Editor.PreviewMouseWheel += (_, _) => _scrollSync.OnEditorInput();
         Editor.PreviewMouseDown += (_, _) => _scrollSync.OnEditorInput(); // includes dragging the scrollbar
         Editor.PreviewKeyDown += (_, _) => _scrollSync.OnEditorInput();
         Editor.PreviewTouchDown += (_, _) => _scrollSync.OnEditorInput();
         Editor.PreviewStylusDown += (_, _) => _scrollSync.OnEditorInput();
         Editor.TextArea.TextView.ScrollOffsetChanged += (_, _) =>
-            _scrollSync.OnEditorScrolled(EditorLineGeometry.TopLine(Editor.TextArea.TextView));
-        _preview.Scrolled += (_, line) => _scrollSync.OnPreviewScrolled(line);
+            _scrollSync.OnEditorScrolled(EditorLineGeometry.PositionOf(Editor.TextArea.TextView));
+        _preview.Scrolled += (_, position) => _scrollSync.OnPreviewScrolled(position);
         _session.DocumentChanged += (_, _) => LoadDocument();
         Drop += OnDrop;
         _preview.OpenDocumentRequested += async (_, path) => await RunSessionAsync(() => _session.OpenAsync(path));

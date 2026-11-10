@@ -1,11 +1,12 @@
 using MarkdownEditor.App.Scrolling;
+using MarkdownEditor.Core.Rendering;
 
 namespace MarkdownEditor.App.Tests;
 
 public class ScrollSynchronizerTests
 {
-    private readonly List<double> _preview = [];
-    private readonly List<double> _editor = [];
+    private readonly List<ScrollPosition> _preview = [];
+    private readonly List<ScrollPosition> _editor = [];
     private readonly ScrollSynchronizer _sync;
 
     public ScrollSynchronizerTests() => _sync = new ScrollSynchronizer(_preview.Add, _editor.Add);
@@ -13,18 +14,18 @@ public class ScrollSynchronizerTests
     [Fact]
     public void Editor_drives_by_default()
     {
-        _sync.OnEditorScrolled(3.5);
+        _sync.OnEditorScrolled(new(3.5, 0.25));
 
-        Assert.Equal([3.5], _preview);
+        Assert.Equal([new ScrollPosition(3.5, 0.25)], _preview);
     }
 
     [Fact]
     public void Preview_scroll_moves_the_editor_without_echoing_back()
     {
-        _sync.OnPreviewScrolled(7.25);
-        _sync.OnEditorScrolled(7.25); // the editor following
+        _sync.OnPreviewScrolled(new(7.25));
+        _sync.OnEditorScrolled(new(7.25)); // the editor following
 
-        Assert.Equal([7.25], _editor);
+        Assert.Equal([new ScrollPosition(7.25)], _editor);
         Assert.Empty(_preview);
         Assert.Equal(ScrollDriver.Preview, _sync.Driver);
     }
@@ -32,11 +33,11 @@ public class ScrollSynchronizerTests
     [Fact]
     public void Editor_input_takes_the_lead_back()
     {
-        _sync.OnPreviewScrolled(7);
+        _sync.OnPreviewScrolled(new(7));
         _sync.OnEditorInput();
-        _sync.OnEditorScrolled(9);
+        _sync.OnEditorScrolled(new(9));
 
-        Assert.Equal([9d], _preview);
+        Assert.Equal([new ScrollPosition(9)], _preview);
     }
 
     [Theory]

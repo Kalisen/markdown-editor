@@ -1,12 +1,22 @@
 using ICSharpCode.AvalonEdit.Rendering;
+using MarkdownEditor.Core.Rendering;
 
 namespace MarkdownEditor.App.Scrolling;
 
-/// <summary>Converts between the editor's vertical scroll offset and fractional 0-based source lines.</summary>
+/// <summary>Converts between the editor's vertical scroll offset and <see cref="ScrollPosition"/>s.</summary>
 internal static class EditorLineGeometry
 {
+    public static ScrollPosition PositionOf(TextView view) =>
+        new(TopLine(view), ScrollTail.Progress(view.VerticalOffset, MaxOffset(view), view.ActualHeight));
+
+    /// <summary>The vertical offset following <paramref name="position"/>: its line at the top, blended toward the end.</summary>
+    public static double OffsetOf(TextView view, ScrollPosition position) =>
+        ScrollTail.Blend(OffsetOf(view, position.Line), MaxOffset(view), position.Tail);
+
+    private static double MaxOffset(TextView view) => Math.Max(0, view.DocumentHeight - view.ActualHeight);
+
     /// <summary>The fractional source line at the top of the view: a wrapped line counts as one line spanning its visual rows.</summary>
-    public static double TopLine(TextView view)
+    private static double TopLine(TextView view)
     {
         if (view.Document is not { } document || document.LineCount == 0) return 0;
         var line = view.GetDocumentLineByVisualTop(view.VerticalOffset);
@@ -15,7 +25,7 @@ internal static class EditorLineGeometry
     }
 
     /// <summary>The vertical offset showing the given fractional source line at the top.</summary>
-    public static double OffsetOf(TextView view, double line)
+    private static double OffsetOf(TextView view, double line)
     {
         if (view.Document is not { } document || document.LineCount == 0) return 0;
         var index = Math.Clamp((int)Math.Floor(line), 0, document.LineCount - 1);

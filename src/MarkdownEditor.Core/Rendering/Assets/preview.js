@@ -70,6 +70,7 @@
 
   let driving = false;      // true while user input targets the preview
   let anchorLine = 0;       // fractional 0-based source line currently shown at the top
+  let anchorTail = 0;       // progress through the last viewport of scrolling (see ScrollPosition.Tail)
   let map = null;           // { lines: number[], ys: number[] }, rebuilt lazily after layout changes
   let scrollQueued = false;
 
@@ -130,15 +131,28 @@
   const lineToY = (line) => interpolate(currentMap().lines, currentMap().ys, line);
   const yToLine = (y) => interpolate(currentMap().ys, currentMap().lines, y);
 
-  function showLine(line) {
+  const maxScroll = () => Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+
+  // Mirrors ScrollTail (C#): the last viewport of scrolling blends the line position toward the end, so both
+  // panels reach their end together even when one is much taller than the other.
+  function tailProgress(y) {
+    const max = maxScroll();
+    if (max <= 0) return 0;
+    const start = Math.max(0, max - window.innerHeight);
+    return Math.min(1, Math.max(0, (y - start) / (max - start)));
+  }
+
+  function show(line, tail) {
     anchorLine = line;
-    window.scrollTo(0, lineToY(line));
+    anchorTail = tail;
+    const y = lineToY(line);
+    window.scrollTo(0, y + (maxScroll() - y) * tail);
   }
 
   // Content was re-rendered or resized (images loaded, diagrams drawn, window resized): keep the anchor line on top.
   function layoutChanged() {
     map = null;
-    showLine(anchorLine);
+    show(anchorLine, anchorTail);
   }
 
   function startDriving() { driving = true; }
@@ -152,8 +166,10 @@
     requestAnimationFrame(() => {
       scrollQueued = false;
       if (!driving) return;
+      // The follower does the blending: report the plain line at the top, plus the tail progress.
       anchorLine = yToLine(window.scrollY);
-      post({ type: 'scrolled', line: anchorLine });
+      anchorTail = tailProgress(window.scrollY);
+      post({ type: 'scrolled', line: anchorLine, tail: anchorTail });
     });
   }, { passive: true });
 
@@ -191,7 +207,7 @@
         if (typeof m === 'string') update(m);
         else if (m && m.type === 'scroll-to-line') {
           driving = false;
-          showLine(m.line);
+          show(m.line, m.tail || 0);
         }
       });
     }

@@ -8,17 +8,17 @@ namespace MarkdownEditor.Core.Rendering;
 /// </summary>
 public static class PreviewMessages
 {
-    /// <summary>Host to page: the editor drives; show the given fractional 0-based source line at the top.</summary>
+    /// <summary>Host to page: the editor drives; follow its <see cref="ScrollPosition"/>.</summary>
     public const string ScrollToLineType = "scroll-to-line";
 
     public const string ReadyType = "ready";
     public const string OpenLinkType = "open-link";
 
-    /// <summary>Page to host: the preview drives; its top now shows the given fractional 0-based source line.</summary>
+    /// <summary>Page to host: the preview drives; it reports its <see cref="ScrollPosition"/>.</summary>
     public const string ScrolledType = "scrolled";
 
-    public static string ScrollToLine(double line) =>
-        JsonSerializer.Serialize(new { type = ScrollToLineType, line = Math.Max(0d, line) });
+    public static string ScrollToLine(ScrollPosition position) =>
+        JsonSerializer.Serialize(new { type = ScrollToLineType, line = Math.Max(0d, position.Line), tail = Math.Clamp(position.Tail, 0d, 1d) });
 
     /// <summary>
     /// Parses a message posted by the preview page. Anything malformed or unknown yields null:
@@ -36,7 +36,8 @@ public static class PreviewMessages
             {
                 ReadyType => new PreviewInboundMessage(PreviewInboundKind.Ready),
                 OpenLinkType when ReadString(root, HrefProperty) is { } href => new PreviewInboundMessage(PreviewInboundKind.OpenLink, href),
-                ScrolledType when ReadLine(root) is { } line => new PreviewInboundMessage(PreviewInboundKind.Scrolled, Line: line),
+                ScrolledType when ReadNumber(root, LineProperty) is { } line =>
+                    new PreviewInboundMessage(PreviewInboundKind.Scrolled, Position: new ScrollPosition(line, Math.Min(1, ReadNumber(root, TailProperty) ?? 0))),
                 _ => null,
             };
         }
@@ -49,10 +50,12 @@ public static class PreviewMessages
     private const string TypeProperty = "type";
     private const string HrefProperty = "href";
     private const string LineProperty = "line";
+    private const string TailProperty = "tail";
 
-    private static double? ReadLine(JsonElement element) =>
-        element.TryGetProperty(LineProperty, out var value) && value.ValueKind == JsonValueKind.Number
-            && value.GetDouble() is var line && double.IsFinite(line) && line >= 0 ? line : null;
+    /// <summary>A finite, non-negative number, or null.</summary>
+    private static double? ReadNumber(JsonElement element, string name) =>
+        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number
+            && value.GetDouble() is var number && double.IsFinite(number) && number >= 0 ? number : null;
 
     private static string? ReadString(JsonElement element, string name) =>
         element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
@@ -65,5 +68,5 @@ public enum PreviewInboundKind
     Scrolled,
 }
 
-/// <param name="Line">For <see cref="PreviewInboundKind.Scrolled"/>: the fractional 0-based source line at the top of the preview.</param>
-public sealed record PreviewInboundMessage(PreviewInboundKind Kind, string? Href = null, double? Line = null);
+/// <param name="Position">For <see cref="PreviewInboundKind.Scrolled"/>: where user input scrolled the preview.</param>
+public sealed record PreviewInboundMessage(PreviewInboundKind Kind, string? Href = null, ScrollPosition? Position = null);
