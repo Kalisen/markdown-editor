@@ -59,6 +59,16 @@ The installer:
   is backed up and restored on uninstall, unless another app has taken over since. Windows still honours a
   default chosen explicitly in *Settings > Apps > Default apps*.
 
+### Releasing
+
+Push a version tag; the *Release* workflow builds, tests, packages the installer with that version and publishes it
+as a GitHub Release (a tag with a `-suffix` becomes a pre-release):
+
+```powershell
+git tag v0.2.0
+git push origin v0.2.0
+```
+
 ## Architecture
 
 ```mermaid
