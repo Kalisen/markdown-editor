@@ -13,7 +13,10 @@
 #ifndef PublishDir
   #define PublishDir "..\artifacts\publish"
 #endif
-#define AppVersion GetVersionNumbersString(AddBackslash(PublishDir) + AppExeName)
+; AppVersion can be passed (/DAppVersion=1.2.0-beta.1) to keep a pre-release label; defaults to the exe's version.
+#ifndef AppVersion
+  #define AppVersion GetVersionNumbersString(AddBackslash(PublishDir) + AppExeName)
+#endif
 
 [Setup]
 AppId={#AppId}
