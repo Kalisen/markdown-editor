@@ -4,7 +4,7 @@ A Windows 11 desktop Markdown editor/viewer with a live split preview, compliant
 [CommonMark 0.31.2](https://spec.commonmark.org/0.31.2/), and extensible through plugins.
 
 Download the installer from [Releases](https://github.com/Kalisen/markdown-editor/releases).
-See the [Code signing policy](#code-signing-policy) and [Privacy](#privacy). Licensed under the [MIT License](LICENSE).
+See [Code signing](#code-signing) and [Privacy](#privacy). Licensed under the [MIT License](LICENSE).
 
 ## Features
 
@@ -75,31 +75,45 @@ git tag v0.2.0
 git push origin v0.2.0
 ```
 
-The workflow submits the installer to SignPath for signing (see [Code signing policy](#code-signing-policy)) and
-waits until an approver approves the signing request on signpath.io, then publishes the signed installer.
-Signing is enabled once these are set in the repository settings (*Secrets and variables > Actions*); until
-then the installer is published unsigned:
+## Code signing
 
-| Kind | Name | Value |
-|---|---|---|
-| Secret | `SIGNPATH_API_TOKEN` | API token of a SignPath user with submitter permission |
-| Variable | `SIGNPATH_ORGANIZATION_ID` | SignPath organization ID |
-| Variable | `SIGNPATH_PROJECT_SLUG` | SignPath project slug |
-| Variable | `SIGNPATH_SIGNING_POLICY_SLUG` | SignPath signing policy slug (e.g. `release-signing`) |
+Releases are signed with a **self-signed** certificate (publisher `Kalisen`): the installer, and inside it
+`MarkdownEditor.exe` and the app's own `MarkdownEditor*.dll` assemblies, all timestamped. Each
+[GitHub Release](https://github.com/Kalisen/markdown-editor/releases) also carries the public certificate,
+`MarkdownEditor-code-signing.cer`.
 
-## Code signing policy
+Windows does not trust a self-signed certificate by default, so on a machine that has not imported it the
+installer still shows "Unknown publisher" and the SmartScreen warning. To trust it (this trusts everything signed
+with that certificate, so only do it if you trust the publisher), run in PowerShell:
 
-Free code signing provided by [SignPath.io](https://about.signpath.io/), certificate by
-[SignPath Foundation](https://signpath.org/).
+```powershell
+Import-Certificate .\MarkdownEditor-code-signing.cer -CertStoreLocation Cert:\CurrentUser\Root
+Import-Certificate .\MarkdownEditor-code-signing.cer -CertStoreLocation Cert:\CurrentUser\TrustedPublisher
+```
 
-- The signed file is the installer (`MarkdownEditor-<version>-setup.exe`) attached to each
-  [GitHub Release](https://github.com/Kalisen/markdown-editor/releases). It is built from this repository's
-  source by the [Release workflow](.github/workflows/release.yml) on GitHub Actions; nothing built elsewhere
-  is signed.
-- Team roles:
-  - Committers and reviewers: [Kalisen](https://github.com/Kalisen)
-  - Approvers: [Kalisen](https://github.com/Kalisen)
-- Every signing request is approved manually by an approver.
+Windows then shows `Kalisen` as the publisher. SmartScreen decides from reputation, so it may still warn about
+a newly downloaded installer.
+
+### Setting up signing
+
+1. Create the certificate, outside the repository (asks for a password; keep the `.pfx` private and backed up):
+
+   ```powershell
+   .\tools\new-code-signing-certificate.ps1 -OutputDirectory $HOME\secrets\markdown-editor
+   ```
+
+2. Store it in the repository secrets (*Settings > Secrets and variables > Actions*):
+
+   | Secret | Value |
+   |---|---|
+   | `CODE_SIGNING_PFX_BASE64` | the `.pfx`, base64-encoded |
+   | `CODE_SIGNING_PFX_PASSWORD` | its password |
+
+   The script prints the `gh secret set` commands. Until `CODE_SIGNING_PFX_BASE64` is set, the *Release* workflow
+   publishes an unsigned installer (with a warning).
+
+To sign a local build, set `CODE_SIGNING_PFX_PASSWORD` and run
+`.\installer\build.ps1 -CertificatePath <path to .pfx>`.
 
 ## Privacy
 

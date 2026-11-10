@@ -1,19 +1,13 @@
 name: Release
 # Pushing a version tag (v1.2.0, or v1.2.0-beta.1 for a pre-release) builds the installer,
-# has SignPath sign it (once the SIGNPATH_* variables and secret are set, see README > Releasing)
-# and publishes it as a GitHub Release asset.
+# signs it with the self-signed certificate (once the CODE_SIGNING_* secrets are set, see README > Code signing)
+# and publishes it, with the public certificate, as GitHub Release assets.
 on:
   push:
     tags: ['v*']
 
 permissions:
   contents: write
-  actions: read # SignPath fetches the unsigned installer from this run's artifacts.
-
-env:
-  # A signing request waits for a manual approval on signpath.io; the job itself is capped at 6 hours.
-  SIGNING_APPROVAL_TIMEOUT_SECONDS: 18000
-  SIGNED_DIR: artifacts/signed
 
 jobs:
   release:
@@ -41,62 +35,29 @@ jobs:
       - name: Install Inno Setup
         run: choco install innosetup --no-progress -y
 
-      - name: Build installer
+      - name: Build and sign installer
         shell: pwsh
-        run: ./installer/build.ps1 -Version ${{ steps.version.outputs.version }}
-
-      - name: Locate installer
-        id: installer
-        shell: pwsh
+        env:
+          CODE_SIGNING_PFX_BASE64: ${{ secrets.CODE_SIGNING_PFX_BASE64 }}
+          CODE_SIGNING_PFX_PASSWORD: ${{ secrets.CODE_SIGNING_PFX_PASSWORD }}
         run: |
-          $installer = Get-ChildItem artifacts/installer/*.exe
-          "path=$($installer.FullName)" >> $env:GITHUB_OUTPUT
-          "name=$($installer.Name)" >> $env:GITHUB_OUTPUT
-
-      - name: Upload unsigned installer
-        id: upload-unsigned
-        if: vars.SIGNPATH_ORGANIZATION_ID != ''
-        uses: actions/upload-artifact@v7
-        with:
-          path: ${{ steps.installer.outputs.path }}
-          archive: false
-
-      - name: Sign installer with SignPath
-        if: vars.SIGNPATH_ORGANIZATION_ID != ''
-        uses: signpath/github-action-submit-signing-request@v3
-        with:
-          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
-          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
-          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
-          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
-          github-artifact-id: ${{ steps.upload-unsigned.outputs.artifact-id }}
-          skip-decompress: true
-          wait-for-completion: true
-          wait-for-completion-timeout-in-seconds: ${{ env.SIGNING_APPROVAL_TIMEOUT_SECONDS }}
-          output-artifact-directory: ${{ env.SIGNED_DIR }}
-          parameters: |
-            version: ${{ toJSON(steps.version.outputs.version) }}
-
-      - name: Use signed installer
-        if: vars.SIGNPATH_ORGANIZATION_ID != ''
-        id: signed
-        shell: pwsh
-        run: |
-          $signed = Join-Path $env:SIGNED_DIR '${{ steps.installer.outputs.name }}'
-          $signature = Get-AuthenticodeSignature $signed
-          if ($signature.Status -ne 'Valid') {
-            throw "Signed installer '$signed' has signature status '$($signature.Status)': $($signature.StatusMessage)"
+          $buildArgs = @{ Version = '${{ steps.version.outputs.version }}' }
+          if ($env:CODE_SIGNING_PFX_BASE64) {
+            $pfx = Join-Path $env:RUNNER_TEMP 'code-signing.pfx'
+            [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:CODE_SIGNING_PFX_BASE64))
+            $buildArgs.CertificatePath = $pfx
+          } else {
+            Write-Host '::warning::CODE_SIGNING_PFX_BASE64 is not set; publishing an unsigned installer.'
           }
-          Write-Host "Signed by $($signature.SignerCertificate.Subject)"
-          "path=$((Resolve-Path $signed).Path)" >> $env:GITHUB_OUTPUT
+          try { ./installer/build.ps1 @buildArgs }
+          finally { if ($buildArgs.CertificatePath) { Remove-Item $buildArgs.CertificatePath } }
 
       - name: Publish GitHub Release
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
-          INSTALLER: ${{ steps.signed.outputs.path || steps.installer.outputs.path }}
         run: |
-          $installer = $env:INSTALLER
-          $releaseArgs = @('${{ github.ref_name }}', $installer, '--title', 'Markdown Editor ${{ steps.version.outputs.version }}', '--generate-notes')
+          $assets = (Get-ChildItem artifacts/installer -File -Include *.exe, *.cer -Recurse).FullName
+          $releaseArgs = @('${{ github.ref_name }}') + $assets + @('--title', 'Markdown Editor ${{ steps.version.outputs.version }}', '--generate-notes')
           if ('${{ steps.version.outputs.prerelease }}' -eq 'true') { $releaseArgs += '--prerelease' }
           gh release create @releaseArgs
