@@ -26,8 +26,16 @@
     <BundledPlugin Include="..\..\plugins\*\*.csproj" />
     <ProjectReference Include="@(BundledPlugin)" ReferenceOutputAssembly="false" Private="false" />
   </ItemGroup>
-  <Target Name="StageBundledPlugins" AfterTargets="Build">
-    <MSBuild Projects="@(BundledPlugin)" Targets="GetTargetPath" Properties="Configuration=$(Configuration)">
+  <Target Name="StageBundledPlugins" AfterTargets="Build" DependsOnTargets="CollectBundledPluginFiles">
+    <Copy SourceFiles="@(_PluginFiles)" DestinationFiles="@(_PluginFiles->'$(OutDir)plugins\%(PluginName)\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+  </Target>
+  <!-- Publish output (used by the installer) gets the same plugins/<name>/ layout as the build output. -->
+  <Target Name="PublishBundledPlugins" AfterTargets="Publish" DependsOnTargets="CollectBundledPluginFiles">
+    <Copy SourceFiles="@(_PluginFiles)" DestinationFiles="@(_PluginFiles->'$(PublishDir)plugins\%(PluginName)\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+  </Target>
+  <Target Name="CollectBundledPluginFiles">
+    <!-- Plugins are RID-agnostic: drop the app's RID so the paths match where the ProjectReference built them. -->
+    <MSBuild Projects="@(BundledPlugin)" Targets="GetTargetPath" Properties="Configuration=$(Configuration)" RemoveProperties="RuntimeIdentifier;SelfContained;PublishReadyToRun">
       <Output TaskParameter="TargetOutputs" ItemName="_PluginAssembly" />
     </MSBuild>
     <ItemGroup>
@@ -35,6 +43,5 @@
                     PluginName="$([System.String]::Copy('%(_PluginAssembly.Filename)').Replace('MarkdownEditor.Plugin.', '').ToLowerInvariant())"
                     Exclude="%(_PluginAssembly.RootDir)%(_PluginAssembly.Directory)**\*.pdb" />
     </ItemGroup>
-    <Copy SourceFiles="@(_PluginFiles)" DestinationFiles="@(_PluginFiles->'$(OutDir)plugins\%(PluginName)\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
   </Target>
 </Project>
