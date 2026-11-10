@@ -25,12 +25,24 @@ public class PreviewMessagesTests
         Assert.Null(PreviewMessages.TryParse(json));
 
     [Theory]
-    [InlineData(0.5, 0.5)]
+    [InlineData(12.5, 12.5)]
     [InlineData(-1, 0)]
-    [InlineData(2, 1)]
-    public void Scroll_ratio_is_clamped(double ratio, double expected)
+    public void Scroll_to_line_is_not_negative(double line, double expected)
     {
-        using var json = JsonDocument.Parse(PreviewMessages.Scroll(ratio));
-        Assert.Equal(expected, json.RootElement.GetProperty("ratio").GetDouble());
+        using var json = JsonDocument.Parse(PreviewMessages.ScrollToLine(line));
+        Assert.Equal(PreviewMessages.ScrollToLineType, json.RootElement.GetProperty("type").GetString());
+        Assert.Equal(expected, json.RootElement.GetProperty("line").GetDouble());
     }
+
+    [Fact]
+    public void Parses_scrolled_message() =>
+        Assert.Equal(new PreviewInboundMessage(PreviewInboundKind.Scrolled, Line: 4.25),
+            PreviewMessages.TryParse("""{"type":"scrolled","line":4.25}"""));
+
+    [Theory]
+    [InlineData("""{"type":"scrolled"}""")]
+    [InlineData("""{"type":"scrolled","line":"4"}""")]
+    [InlineData("""{"type":"scrolled","line":-1}""")]
+    public void Malformed_scrolled_messages_are_ignored(string json) =>
+        Assert.Null(PreviewMessages.TryParse(json));
 }

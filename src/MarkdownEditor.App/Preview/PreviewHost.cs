@@ -18,11 +18,12 @@ namespace MarkdownEditor.App.Preview;
 /// </summary>
 internal sealed class PreviewHost(WebView2 view, IReadOnlyList<LoadedPlugin> plugins, PreviewTheme theme)
 {
+    /// <summary>Smallest change of the top source line worth sending to the page (in lines).</summary>
     private const double ScrollEpsilon = 0.001;
 
     private readonly MarkdownFileLocator _locator = new();
     private bool _ready;
-    private double _lastScrollRatio = double.NaN;
+    private double _lastScrollLine = double.NaN;
     private string? _pendingHtml;
     private string? _documentFolder;
 
@@ -30,6 +31,9 @@ internal sealed class PreviewHost(WebView2 view, IReadOnlyList<LoadedPlugin> plu
 
     /// <summary>Raised when a preview link targets a Markdown file in the document folder.</summary>
     public event EventHandler<string>? OpenDocumentRequested;
+
+    /// <summary>Raised when user input scrolls the preview, with the fractional 0-based source line now at its top.</summary>
+    public event EventHandler<double>? Scrolled;
 
     /// <returns>Null on success, otherwise the reason the preview is unavailable.</returns>
     public async Task<string?> InitializeAsync()
@@ -132,11 +136,12 @@ internal sealed class PreviewHost(WebView2 view, IReadOnlyList<LoadedPlugin> plu
         view.CoreWebView2.PostWebMessageAsString(html);
     }
 
-    public void ScrollTo(double ratio)
+    /// <summary>Scrolls the preview so the given fractional 0-based source line is at its top.</summary>
+    public void ScrollToLine(double line)
     {
-        if (!_ready || Math.Abs(ratio - _lastScrollRatio) < ScrollEpsilon) return;
-        _lastScrollRatio = ratio;
-        view.CoreWebView2.PostWebMessageAsJson(PreviewMessages.Scroll(ratio));
+        if (!_ready || Math.Abs(line - _lastScrollLine) < ScrollEpsilon) return;
+        _lastScrollLine = line;
+        view.CoreWebView2.PostWebMessageAsJson(PreviewMessages.ScrollToLine(line));
     }
 
     /// <summary>Lowers WebView2 memory usage while the app is minimized or in the background.</summary>
@@ -168,6 +173,10 @@ internal sealed class PreviewHost(WebView2 view, IReadOnlyList<LoadedPlugin> plu
                 break;
             case { Kind: PreviewInboundKind.OpenLink, Href: var href }:
                 Follow(href);
+                break;
+            case { Kind: PreviewInboundKind.Scrolled, Line: { } line }:
+                _lastScrollLine = double.NaN; // the page moved on its own; the next request must go through
+                Scrolled?.Invoke(this, line);
                 break;
         }
     }

@@ -8,13 +8,17 @@ namespace MarkdownEditor.Core.Rendering;
 /// </summary>
 public static class PreviewMessages
 {
-    public const string ScrollType = "scroll";
+    /// <summary>Host to page: the editor drives; show the given fractional 0-based source line at the top.</summary>
+    public const string ScrollToLineType = "scroll-to-line";
+
     public const string ReadyType = "ready";
     public const string OpenLinkType = "open-link";
 
+    /// <summary>Page to host: the preview drives; its top now shows the given fractional 0-based source line.</summary>
+    public const string ScrolledType = "scrolled";
 
-    public static string Scroll(double ratio) =>
-        JsonSerializer.Serialize(new { type = ScrollType, ratio = Math.Clamp(ratio, 0d, 1d) });
+    public static string ScrollToLine(double line) =>
+        JsonSerializer.Serialize(new { type = ScrollToLineType, line = Math.Max(0d, line) });
 
     /// <summary>
     /// Parses a message posted by the preview page. Anything malformed or unknown yields null:
@@ -32,6 +36,7 @@ public static class PreviewMessages
             {
                 ReadyType => new PreviewInboundMessage(PreviewInboundKind.Ready),
                 OpenLinkType when ReadString(root, HrefProperty) is { } href => new PreviewInboundMessage(PreviewInboundKind.OpenLink, href),
+                ScrolledType when ReadLine(root) is { } line => new PreviewInboundMessage(PreviewInboundKind.Scrolled, Line: line),
                 _ => null,
             };
         }
@@ -43,6 +48,11 @@ public static class PreviewMessages
 
     private const string TypeProperty = "type";
     private const string HrefProperty = "href";
+    private const string LineProperty = "line";
+
+    private static double? ReadLine(JsonElement element) =>
+        element.TryGetProperty(LineProperty, out var value) && value.ValueKind == JsonValueKind.Number
+            && value.GetDouble() is var line && double.IsFinite(line) && line >= 0 ? line : null;
 
     private static string? ReadString(JsonElement element, string name) =>
         element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
@@ -52,6 +62,8 @@ public enum PreviewInboundKind
 {
     Ready,
     OpenLink,
+    Scrolled,
 }
 
-public sealed record PreviewInboundMessage(PreviewInboundKind Kind, string? Href = null);
+/// <param name="Line">For <see cref="PreviewInboundKind.Scrolled"/>: the fractional 0-based source line at the top of the preview.</param>
+public sealed record PreviewInboundMessage(PreviewInboundKind Kind, string? Href = null, double? Line = null);

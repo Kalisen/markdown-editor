@@ -6,6 +6,7 @@ using System.Windows.Input;
 using System.Windows.Threading;
 using MarkdownEditor.App.Editing;
 using MarkdownEditor.App.Preview;
+using MarkdownEditor.App.Scrolling;
 using MarkdownEditor.Core.Editing;
 using MarkdownEditor.Core.Export;
 using MarkdownEditor.Core.Plugins;
@@ -30,6 +31,7 @@ public partial class MainWindow : Window
     private readonly PreviewTheme _theme;
     private readonly DispatcherTimer _renderTimer;
     private readonly CloseConfirmation _closeConfirmation;
+    private readonly ScrollSynchronizer _scrollSync;
     private bool _loadingDocument;
 
     /// <summary>
@@ -45,7 +47,7 @@ public partial class MainWindow : Window
         _session = session;
         _prompts = prompts;
         _theme = theme;
-        _renderer = new BackgroundRenderer<RenderResult>(renderer.RenderDocument);
+        _renderer = new BackgroundRenderer<RenderResult>(text => renderer.RenderDocument(text, annotateSourceLines: true));
         _plugins = plugins;
         _failures = failures;
         _closeConfirmation = new CloseConfirmation(() =>
@@ -62,7 +64,16 @@ public partial class MainWindow : Window
         _renderTimer.Tick += (_, _) => RenderNow();
 
         Editor.TextChanged += OnEditorTextChanged;
-        Editor.TextArea.TextView.ScrollOffsetChanged += (_, _) => SyncScroll();
+        _scrollSync = new ScrollSynchronizer(_preview.ScrollToLine,
+            line => Editor.ScrollToVerticalOffset(EditorLineGeometry.OffsetOf(Editor.TextArea.TextView, line)));
+        Editor.PreviewMouseWheel += (_, _) => _scrollSync.OnEditorInput();
+        Editor.PreviewMouseDown += (_, _) => _scrollSync.OnEditorInput(); // includes dragging the scrollbar
+        Editor.PreviewKeyDown += (_, _) => _scrollSync.OnEditorInput();
+        Editor.PreviewTouchDown += (_, _) => _scrollSync.OnEditorInput();
+        Editor.PreviewStylusDown += (_, _) => _scrollSync.OnEditorInput();
+        Editor.TextArea.TextView.ScrollOffsetChanged += (_, _) =>
+            _scrollSync.OnEditorScrolled(EditorLineGeometry.TopLine(Editor.TextArea.TextView));
+        _preview.Scrolled += (_, line) => _scrollSync.OnPreviewScrolled(line);
         _session.DocumentChanged += (_, _) => LoadDocument();
         Drop += OnDrop;
         _preview.OpenDocumentRequested += async (_, path) => await RunSessionAsync(() => _session.OpenAsync(path));
@@ -134,13 +145,6 @@ public partial class MainWindow : Window
     {
         ActiveExtensions.Text = PluginUsageText.Describe(used);
         ActiveExtensions.ToolTip = PluginUsageText.Details(_plugins.Select(p => p.Plugin), used);
-    }
-
-    private void SyncScroll()
-    {
-        var view = Editor.TextArea.TextView;
-        var scrollable = view.DocumentHeight - view.ActualHeight;
-        if (scrollable > 0) _preview.ScrollTo(view.VerticalOffset / scrollable);
     }
 
     private void UpdateTitle()

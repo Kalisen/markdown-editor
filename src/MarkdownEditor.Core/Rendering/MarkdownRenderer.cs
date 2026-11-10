@@ -50,9 +50,12 @@ public sealed class MarkdownRenderer
     public string Render(string markdown) => RenderDocument(markdown).Html;
 
     /// <summary>Parses once and uses the same syntax tree for the HTML and for plugin usage detection.</summary>
-    public RenderResult RenderDocument(string markdown)
+    /// <param name="markdown">The document text.</param>
+    /// <param name="annotateSourceLines">Tags blocks with their source lines (see <see cref="SourceLineAnnotator"/>), for the preview.</param>
+    public RenderResult RenderDocument(string markdown, bool annotateSourceLines = false)
     {
         var document = Markdown.Parse(markdown, _pipeline);
+        if (annotateSourceLines) SourceLineAnnotator.Annotate(document, markdown);
         using var writer = new StringWriter();
         var renderer = new HtmlRenderer(writer);
         _pipeline.Setup(renderer);
