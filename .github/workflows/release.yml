@@ -1,0 +1,49 @@
+name: Release
+# Pushing a version tag (v1.2.0, or v1.2.0-beta.1 for a pre-release) builds the installer
+# and publishes it as a GitHub Release asset.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Read version from tag
+        id: version
+        shell: pwsh
+        run: |
+          $tag = '${{ github.ref_name }}'
+          if ($tag -notmatch '^v(?<version>\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)$') {
+            throw "Tag '$tag' is not a version tag (expected v<major>.<minor>.<patch>[-<prerelease>])."
+          }
+          "version=$($Matches.version)" >> $env:GITHUB_OUTPUT
+          "prerelease=$($tag.Contains('-').ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+
+      - run: dotnet build MarkdownEditor.slnx -c Release -p:Version=${{ steps.version.outputs.version }}
+      - run: dotnet test --solution MarkdownEditor.slnx -c Release --no-build
+
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress -y
+
+      - name: Build installer
+        shell: pwsh
+        run: ./installer/build.ps1 -Version ${{ steps.version.outputs.version }}
+
+      - name: Publish GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $installer = (Get-ChildItem artifacts/installer/*.exe).FullName
+          $releaseArgs = @('${{ github.ref_name }}', $installer, '--title', 'Markdown Editor ${{ steps.version.outputs.version }}', '--generate-notes')
+          if ('${{ steps.version.outputs.prerelease }}' -eq 'true') { $releaseArgs += '--prerelease' }
+          gh release create @releaseArgs

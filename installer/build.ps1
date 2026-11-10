@@ -1,6 +1,8 @@
 # Publishes a self-contained win-x64 build and compiles the Inno Setup installer.
 # Output: artifacts\installer\MarkdownEditor-<version>-setup.exe
+# -Version overrides <Version> from Directory.Build.props (the release workflow passes the tag's version).
 param(
+    [string]$Version,
     [string]$Iscc = "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe"
 )
 
@@ -18,9 +20,18 @@ if (-not (Test-Path $Iscc)) {
 
 if (Test-Path $PublishDir) { Remove-Item $PublishDir -Recurse -Force }
 
-dotnet publish (Join-Path $RepoRoot 'src\MarkdownEditor.App') -c Release -r $RuntimeId --self-contained true `
-    -p:PublishReadyToRun=true -o $PublishDir
+$PublishArgs = @(
+    (Join-Path $RepoRoot 'src\MarkdownEditor.App'), '-c', 'Release', '-r', $RuntimeId, '--self-contained', 'true',
+    '-p:PublishReadyToRun=true', '-o', $PublishDir
+)
+$IsccArgs = @("/DPublishDir=$PublishDir")
+if ($Version) {
+    $PublishArgs += "-p:Version=$Version"
+    $IsccArgs += "/DAppVersion=$Version"
+}
+
+dotnet publish @PublishArgs
 if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed ($LASTEXITCODE)" }
 
-& $Iscc "/DPublishDir=$PublishDir" (Join-Path $PSScriptRoot 'MarkdownEditor.iss')
+& $Iscc @IsccArgs (Join-Path $PSScriptRoot 'MarkdownEditor.iss')
 if ($LASTEXITCODE -ne 0) { throw "ISCC failed ($LASTEXITCODE)" }
