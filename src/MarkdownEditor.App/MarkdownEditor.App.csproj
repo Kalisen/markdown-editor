@@ -5,7 +5,13 @@
     <UseWPF>true</UseWPF>
     <AssemblyName>MarkdownEditor</AssemblyName>
     <RootNamespace>MarkdownEditor.App</RootNamespace>
+    <!-- Exe icon: taskbar, Start menu, and the .md file association (DefaultIcon = exe,0). -->
+    <ApplicationIcon>Assets\app-icon.ico</ApplicationIcon>
   </PropertyGroup>
+  <ItemGroup>
+    <!-- Window title-bar icon. -->
+    <Resource Include="Assets\app-icon.ico" />
+  </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="MarkdownEditor.App.Tests" />
     <PackageReference Include="AvalonEdit" />

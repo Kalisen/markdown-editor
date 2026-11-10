@@ -27,6 +27,7 @@ DefaultDirName={autopf}\{#AppName}
 DefaultGroupName={#AppName}
 DisableProgramGroupPage=yes
 UninstallDisplayIcon={app}\{#AppExeName}
+SetupIconFile=..\src\MarkdownEditor.App\Assets\app-icon.ico
 ; Per-user install by default (no admin prompt); the user may choose an all-users install instead.
 PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog

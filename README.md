@@ -39,6 +39,9 @@ dotnet test --solution MarkdownEditor.slnx
 .\src\MarkdownEditor.App\bin\Debug\net10.0-windows\MarkdownEditor.exe samples\welcome.md
 ```
 
+The app icon's source is `src\MarkdownEditor.App\Assets\app-icon.svg`; after editing it, regenerate
+`app-icon.ico` with `python tools\build-app-icon.py` (needs Microsoft Edge and Pillow).
+
 ## Installer
 
 Requires [Inno Setup 6](https://jrsoftware.org/isinfo.php) (`winget install JRSoftware.InnoSetup`).
