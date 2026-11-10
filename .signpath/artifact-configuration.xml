@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  SignPath artifact configuration for the installer (paste it into the SignPath project's artifact configuration).
+  The Release workflow uploads the installer as a single file (not a zip) and passes the release version as the
+  "version" parameter, so only an installer whose product name and version match the release is signed.
+-->
+<artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
+  <parameters>
+    <parameter name="version" required="true" />
+  </parameters>
+  <pe-file path="MarkdownEditor-${version}-setup.exe" product-name="Markdown Editor" product-version="${version}">
+    <authenticode-sign />
+  </pe-file>
+</artifact-configuration>
