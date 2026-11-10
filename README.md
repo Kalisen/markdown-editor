@@ -3,6 +3,9 @@
 A Windows 11 desktop Markdown editor/viewer with a live split preview, compliant with
 [CommonMark 0.31.2](https://spec.commonmark.org/0.31.2/), and extensible through plugins.
 
+Download the installer from [Releases](https://github.com/Kalisen/markdown-editor/releases).
+See the [Code signing policy](#code-signing-policy) and [Privacy](#privacy). Licensed under the [MIT License](LICENSE).
+
 ## Features
 
 - Split view: syntax-highlighted source (AvalonEdit) and live HTML preview (WebView2), debounced at 300 ms,
@@ -71,6 +74,39 @@ as a GitHub Release (a tag with a `-suffix` becomes a pre-release):
 git tag v0.2.0
 git push origin v0.2.0
 ```
+
+The workflow submits the installer to SignPath for signing (see [Code signing policy](#code-signing-policy)) and
+waits until an approver approves the signing request on signpath.io, then publishes the signed installer.
+Signing is enabled once these are set in the repository settings (*Secrets and variables > Actions*); until
+then the installer is published unsigned:
+
+| Kind | Name | Value |
+|---|---|---|
+| Secret | `SIGNPATH_API_TOKEN` | API token of a SignPath user with submitter permission |
+| Variable | `SIGNPATH_ORGANIZATION_ID` | SignPath organization ID |
+| Variable | `SIGNPATH_PROJECT_SLUG` | SignPath project slug |
+| Variable | `SIGNPATH_SIGNING_POLICY_SLUG` | SignPath signing policy slug (e.g. `release-signing`) |
+
+## Code signing policy
+
+Free code signing provided by [SignPath.io](https://about.signpath.io/), certificate by
+[SignPath Foundation](https://signpath.org/).
+
+- The signed file is the installer (`MarkdownEditor-<version>-setup.exe`) attached to each
+  [GitHub Release](https://github.com/Kalisen/markdown-editor/releases). It is built from this repository's
+  source by the [Release workflow](.github/workflows/release.yml) on GitHub Actions; nothing built elsewhere
+  is signed.
+- Team roles:
+  - Committers and reviewers: [Kalisen](https://github.com/Kalisen)
+  - Approvers: [Kalisen](https://github.com/Kalisen)
+- Every signing request is approved manually by an approver.
+
+## Privacy
+
+This program will not transfer any information to other networked systems unless specifically requested by
+the user or the person installing or operating it. The only network access is the user's own: opening a web
+link from the preview in the browser, and loading remote (`https:`) images referenced by the document being
+viewed.
 
 ## Architecture
 
