@@ -29,8 +29,8 @@ public partial class MainWindow : Window
     private readonly PreviewHost _preview;
     private readonly PreviewTheme _theme;
     private readonly DispatcherTimer _renderTimer;
+    private readonly CloseConfirmation _closeConfirmation;
     private bool _loadingDocument;
-    private bool _closeConfirmed;
 
     /// <summary>
     /// True when the editor holds edits not yet copied into the document model. The full text is only
@@ -48,6 +48,11 @@ public partial class MainWindow : Window
         _renderer = new BackgroundRenderer<RenderResult>(renderer.RenderDocument);
         _plugins = plugins;
         _failures = failures;
+        _closeConfirmation = new CloseConfirmation(() =>
+        {
+            SyncText();
+            return _session.ConfirmDiscardAsync();
+        }, Close);
 
         Editor.SyntaxHighlighting = MarkdownHighlighting.Load();
         Editor.Document.UndoStack.SizeLimit = UndoLimit;
@@ -201,15 +206,10 @@ public partial class MainWindow : Window
             await RunSessionAsync(() => _session.OpenAsync(files[0]));
     }
 
-    protected override async void OnClosing(CancelEventArgs e)
+    protected override void OnClosing(CancelEventArgs e)
     {
         base.OnClosing(e);
-        if (_closeConfirmed) return;
-        e.Cancel = true;
-        SyncText();
-        if (!await _session.ConfirmDiscardAsync()) return;
-        _closeConfirmed = true;
-        Close();
+        e.Cancel = _closeConfirmation.ShouldCancel();
     }
 
     private void OnShowPlugins(object sender, RoutedEventArgs e)
