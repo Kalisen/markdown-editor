@@ -4,3 +4,4 @@ obj/
 *.user
 .worktrees/
 TestResults/
+artifacts/

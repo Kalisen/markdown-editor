@@ -39,6 +39,26 @@ dotnet test --solution MarkdownEditor.slnx
 .\src\MarkdownEditor.App\bin\Debug\net10.0-windows\MarkdownEditor.exe samples\welcome.md
 ```
 
+## Installer
+
+Requires [Inno Setup 6](https://jrsoftware.org/isinfo.php) (`winget install JRSoftware.InnoSetup`).
+
+```powershell
+.\installer\build.ps1
+```
+
+This publishes a self-contained win-x64 build (bundled plugins included) to `artifacts\publish\` and compiles
+`installer\MarkdownEditor.iss` into `artifacts\installer\MarkdownEditor-<version>-setup.exe`. The version comes from
+`<Version>` in `Directory.Build.props`.
+
+The installer:
+
+- installs per user by default (no admin prompt), or for all users if chosen;
+- always lists Markdown Editor under "Open with" for `.md` / `.markdown`;
+- offers, as a checked-by-default option, to make it the default app for `.md` / `.markdown`. The previous default
+  is backed up and restored on uninstall, unless another app has taken over since. Windows still honours a
+  default chosen explicitly in *Settings > Apps > Default apps*.
+
 ## Architecture
 
 ```mermaid

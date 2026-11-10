@@ -4,5 +4,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <!-- Single source of the product version; the installer reads it back from MarkdownEditor.exe. -->
+    <Version>0.1.0</Version>
   </PropertyGroup>
 </Project>
