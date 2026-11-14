@@ -21,7 +21,7 @@ public partial class App : Application
         var failures = catalog.Failures.Concat(renderer.Failures).ToList();
 
         var prompts = new WpfUserPrompts();
-        var session = new EditorSession(new FileDocumentStore(), prompts);
+        var session = new EditorSession(new FileDocumentStore(), prompts, new FileDocumentWatcher());
         var window = new MainWindow(session, prompts, renderer, active, failures, SystemTheme.Detect());
         MainWindow = window;
         window.Show();

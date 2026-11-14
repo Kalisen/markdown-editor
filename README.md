@@ -12,6 +12,7 @@ See [Code signing](#code-signing) and [Privacy](#privacy). Licensed under the [M
   rendered on a background thread with incremental preview updates and scroll sync.
 - Links in the preview: web links open in the browser, links to other Markdown files open in the editor.
 - New / Open / Save / Save As (Ctrl+N / Ctrl+O / Ctrl+S / Ctrl+Shift+S), drag & drop, open from command line.
+- Detects when another program changes the open file and offers to reload it; File > Reload File (F5) reloads on demand.
 - Unsaved-changes guard on New, Open and Close.
 - File > Export to HTML (single file, stylesheets inlined, no scripts) or PDF (light theme), including
   diagrams, math and highlighting as rendered.

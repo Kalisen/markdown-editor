@@ -26,6 +26,19 @@ public class MarkdownDocumentTests
     }
 
     [Fact]
+    public void File_changed_on_disk_makes_document_dirty_until_it_matches_the_file()
+    {
+        var doc = new MarkdownDocument(@"C:\d\a.md", "x");
+        Assert.True(doc.MatchesSaved("x"));
+
+        doc.MarkChangedOnDisk("y");
+        Assert.Equal((true, true, false), (doc.IsDirty, doc.MatchesSaved("y"), doc.MatchesSaved("x")));
+
+        doc.Text = "y";
+        Assert.False(doc.IsDirty);
+    }
+
+    [Fact]
     public void Same_length_edit_is_dirty()
     {
         var doc = new MarkdownDocument(text: "abc") { Text = "abd" };

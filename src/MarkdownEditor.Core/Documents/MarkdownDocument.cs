@@ -35,11 +35,15 @@ public sealed class MarkdownDocument
         set
         {
             _text = value;
-            _isDirty = value.Length != _savedLength || !Hash(value).AsSpan().SequenceEqual(_savedHash);
+            _isDirty = !MatchesSaved(value);
         }
     }
 
     public bool IsDirty => _isDirty;
+
+    /// <returns>True when <paramref name="text"/> is what was last loaded from or saved to the file.</returns>
+    public bool MatchesSaved(string text) =>
+        text.Length == _savedLength && Hash(text).AsSpan().SequenceEqual(_savedHash);
 
     public void MarkSaved(string filePath)
     {
@@ -47,6 +51,17 @@ public sealed class MarkdownDocument
         _savedLength = _text.Length;
         _savedHash = Hash(_text);
         _isDirty = false;
+    }
+
+    /// <summary>
+    /// Records that the file now holds <paramref name="diskText"/> while this document keeps its own text:
+    /// the document is dirty for as long as it differs from the file.
+    /// </summary>
+    public void MarkChangedOnDisk(string diskText)
+    {
+        _savedLength = diskText.Length;
+        _savedHash = Hash(diskText);
+        _isDirty = !MatchesSaved(_text);
     }
 
     private static byte[] Hash(string text) => SHA256.HashData(MemoryMarshal.AsBytes(text.AsSpan()));

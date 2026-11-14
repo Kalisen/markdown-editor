@@ -49,14 +49,42 @@ public class EditorSessionTests
             return Decision;
         }
 
+        public bool Reload { get; set; }
+        public List<bool> ChangedFileAsked { get; } = [];
+        public int ReloadDiscardAsked { get; private set; }
+
+        public bool AskReloadChangedFile(bool hasUnsavedChanges)
+        {
+            ChangedFileAsked.Add(hasUnsavedChanges);
+            return Reload;
+        }
+
+        public bool AskReloadDiscardingChanges(string documentName)
+        {
+            ReloadDiscardAsked++;
+            return Reload;
+        }
+
         public void ShowError(string message) => Errors.Add(message);
+    }
+
+    private sealed class FakeWatcher : IDocumentWatcher
+    {
+        public event EventHandler? Changed;
+
+        public string? Watched { get; private set; }
+
+        public void Watch(string? path) => Watched = path;
+
+        public void Raise() => Changed?.Invoke(this, EventArgs.Empty);
     }
 
     private readonly MemoryStore _store = new() { Files = { [PathA] = "# A" } };
     private readonly ScriptedPrompts _prompts = new();
+    private readonly FakeWatcher _watcher = new();
     private readonly EditorSession _session;
 
-    public EditorSessionTests() => _session = new EditorSession(_store, _prompts);
+    public EditorSessionTests() => _session = new EditorSession(_store, _prompts, _watcher);
 
     [Fact]
     public async Task Open_loads_file_via_prompt_and_raises_change()
@@ -139,5 +167,135 @@ public class EditorSessionTests
 
         Assert.Equal(saved, _store.Files[PathA] == "edited");
         Assert.Equal(proceeds ? null : PathA, _session.Document.FilePath);
+    }
+
+    [Fact]
+    public async Task Watcher_follows_the_document_file_and_its_hints_are_forwarded()
+    {
+        var hints = 0;
+        _session.ExternalChangeSuspected += (_, _) => hints++;
+
+        await _session.OpenAsync(PathA);
+        Assert.Equal(PathA, _watcher.Watched);
+
+        _prompts.SavePath = PathB;
+        await _session.SaveAsAsync();
+        Assert.Equal(PathB, _watcher.Watched);
+
+        await _session.NewAsync();
+        Assert.Null(_watcher.Watched);
+
+        _watcher.Raise();
+        Assert.Equal(1, hints);
+    }
+
+    [Fact]
+    public async Task External_change_accepted_reloads_the_file()
+    {
+        await _session.OpenAsync(PathA);
+        _store.Files[PathA] = "# external";
+        _prompts.Reload = true;
+
+        Assert.True(await _session.CheckForExternalChangeAsync());
+
+        Assert.Equal(("# external", false), (_session.Document.Text, _session.Document.IsDirty));
+        Assert.Equal([false], _prompts.ChangedFileAsked);
+    }
+
+    [Fact]
+    public async Task External_change_declined_keeps_text_as_unsaved_and_is_not_offered_again()
+    {
+        await _session.OpenAsync(PathA);
+        _store.Files[PathA] = "# external";
+
+        Assert.False(await _session.CheckForExternalChangeAsync());
+        Assert.False(await _session.CheckForExternalChangeAsync());
+
+        Assert.Equal(("# A", true), (_session.Document.Text, _session.Document.IsDirty));
+        Assert.Single(_prompts.ChangedFileAsked);
+    }
+
+    [Fact]
+    public async Task External_change_prompt_warns_about_unsaved_changes()
+    {
+        await _session.OpenAsync(PathA);
+        _session.Document.Text = "edited";
+        _store.Files[PathA] = "# external";
+
+        await _session.CheckForExternalChangeAsync();
+
+        Assert.Equal([true], _prompts.ChangedFileAsked);
+    }
+
+    [Fact]
+    public async Task Own_save_missing_file_or_untitled_document_is_not_an_external_change()
+    {
+        Assert.False(await _session.CheckForExternalChangeAsync()); // untitled
+
+        await _session.OpenAsync(PathA);
+        _session.Document.Text = "changed";
+        await _session.SaveAsync();
+        Assert.False(await _session.CheckForExternalChangeAsync()); // own save
+
+        _store.Files.Remove(PathA);
+        Assert.False(await _session.CheckForExternalChangeAsync()); // deleted
+
+        Assert.Empty(_prompts.ChangedFileAsked);
+        Assert.Empty(_prompts.Errors);
+    }
+
+    [Fact]
+    public async Task External_change_is_not_checked_while_another_operation_awaits_the_user()
+    {
+        await _session.OpenAsync(PathA);
+        _store.Files[PathA] = "# external";
+        _prompts.Reload = true;
+        var checkedDuringSave = false;
+        _session.DocumentChanged += async (_, _) => checkedDuringSave = await _session.CheckForExternalChangeAsync();
+
+        _session.Document.Text = "mine";
+        await _session.SaveAsync();
+
+        Assert.False(checkedDuringSave);
+        Assert.Equal("mine", _session.Document.Text);
+    }
+
+    [Fact]
+    public async Task Reload_rereads_a_clean_document_without_asking()
+    {
+        await _session.OpenAsync(PathA);
+        _store.Files[PathA] = "# external";
+
+        Assert.True(await _session.ReloadAsync());
+
+        Assert.Equal("# external", _session.Document.Text);
+        Assert.Equal(0, _prompts.ReloadDiscardAsked);
+    }
+
+    [Theory]
+    [InlineData(true, "# A")]
+    [InlineData(false, "edited")]
+    public async Task Reload_of_dirty_document_needs_confirmation(bool confirmed, string expectedText)
+    {
+        await _session.OpenAsync(PathA);
+        _session.Document.Text = "edited";
+        _prompts.Reload = confirmed;
+
+        Assert.Equal(confirmed, await _session.ReloadAsync());
+
+        Assert.Equal(expectedText, _session.Document.Text);
+    }
+
+    [Fact]
+    public async Task Reload_does_nothing_for_untitled_document_and_reports_unreadable_file()
+    {
+        Assert.False(await _session.ReloadAsync());
+        Assert.Empty(_prompts.Errors);
+
+        await _session.OpenAsync(PathA);
+        _store.Files.Remove(PathA);
+
+        Assert.False(await _session.ReloadAsync());
+        Assert.Single(_prompts.Errors);
     }
 }

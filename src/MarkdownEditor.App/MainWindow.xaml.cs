@@ -22,6 +22,12 @@ public partial class MainWindow : Window
     private static readonly TimeSpan RenderDebounce = TimeSpan.FromMilliseconds(300);
     private const int UndoLimit = 2000;
 
+    /// <summary>Lets a burst of file events (one save usually raises several) settle into a single check.</summary>
+    private static readonly TimeSpan ExternalChangeDebounce = TimeSpan.FromMilliseconds(250);
+
+    public static readonly RoutedUICommand ReloadFileCommand = new("_Reload File", nameof(ReloadFileCommand),
+        typeof(MainWindow), [new KeyGesture(Key.F5)]);
+
     private readonly EditorSession _session;
     private readonly IUserPrompts _prompts;
     private readonly BackgroundRenderer<RenderResult> _renderer;
@@ -32,7 +38,11 @@ public partial class MainWindow : Window
     private readonly DispatcherTimer _renderTimer;
     private readonly CloseConfirmation _closeConfirmation;
     private readonly ScrollSynchronizer _scrollSync;
+    private readonly DispatcherTimer _externalChangeTimer;
     private bool _loadingDocument;
+
+    /// <summary>The file shown in the editor, to keep the caret and scroll position when it is reloaded.</summary>
+    private string? _loadedPath;
 
     /// <summary>
     /// True when the editor holds edits not yet copied into the document model. The full text is only
@@ -79,6 +89,21 @@ public partial class MainWindow : Window
         _preview.OpenDocumentRequested += async (_, path) => await RunSessionAsync(() => _session.OpenAsync(path));
         StateChanged += (_, _) => _preview.SetBackground(WindowState == WindowState.Minimized);
         Activated += (_, _) => _preview.SetBackground(false);
+
+        // The prompt waits until the window is in use: file events only trigger a check while it is active,
+        // and activation always checks (which also covers changes the file watcher missed).
+        _externalChangeTimer = new DispatcherTimer { Interval = ExternalChangeDebounce };
+        _externalChangeTimer.Tick += async (_, _) =>
+        {
+            _externalChangeTimer.Stop();
+            if (IsActive) await CheckForExternalChangeAsync();
+        };
+        _session.ExternalChangeSuspected += (_, _) => Dispatcher.BeginInvoke(() =>
+        {
+            _externalChangeTimer.Stop();
+            _externalChangeTimer.Start();
+        });
+        Activated += async (_, _) => await CheckForExternalChangeAsync();
         Deactivated += (_, _) => _preview.SetBackground(true);
         Loaded += async (_, _) =>
         {
@@ -94,8 +119,21 @@ public partial class MainWindow : Window
 
     private void LoadDocument()
     {
+        var document = _session.Document;
+        var reloaded = document.FilePath is not null && document.FilePath == _loadedPath;
+        _loadedPath = document.FilePath;
         _loadingDocument = true;
-        if (Editor.Text != _session.Document.Text) Editor.Text = _session.Document.Text;
+        if (Editor.Text != document.Text)
+        {
+            var caret = Editor.CaretOffset;
+            var scroll = Editor.VerticalOffset;
+            Editor.Text = document.Text;
+            if (reloaded)
+            {
+                Editor.CaretOffset = Math.Min(caret, Editor.Document.TextLength);
+                Editor.ScrollToVerticalOffset(scroll);
+            }
+        }
         _loadingDocument = false;
         _editorAhead = false;
         _preview.SetDocumentFolder(_session.Document.Directory);
@@ -133,12 +171,20 @@ public partial class MainWindow : Window
     }
 
     /// <summary>Runs a document operation on up-to-date text, then refreshes the title.</summary>
-    private async Task RunSessionAsync(Func<Task<bool>> operation)
+    private async Task<bool> RunSessionAsync(Func<Task<bool>> operation)
     {
         SyncText();
-        await operation();
+        var done = await operation();
         UpdateTitle();
+        return done;
     }
+
+    private async Task CheckForExternalChangeAsync()
+    {
+        if (await RunSessionAsync(_session.CheckForExternalChangeAsync)) ShowReloaded();
+    }
+
+    private void ShowReloaded() => StatusText.Content = $"Reloaded {_session.Document.DisplayName}";
 
     /// <summary>Status bar: the extensions applying to the current document; tooltip lists all loaded plugins.</summary>
     private void ShowUsedExtensions(IReadOnlyList<IMarkdownPlugin> used)
@@ -166,6 +212,14 @@ public partial class MainWindow : Window
     {
         await RunSessionAsync(_session.SaveAsAsync);
     }
+
+    private async void OnReloadFile(object sender, ExecutedRoutedEventArgs e)
+    {
+        if (await RunSessionAsync(_session.ReloadAsync)) ShowReloaded();
+    }
+
+    private void OnCanReloadFile(object sender, CanExecuteRoutedEventArgs e) =>
+        e.CanExecute = _session.Document.FilePath is not null;
 
     private void OnExit(object sender, RoutedEventArgs e) => Close();
 
