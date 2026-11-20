@@ -132,6 +132,8 @@ final class MainWindowControllerTests {
         try await wait(for: "the preview") { try await self.previewHolds("document.querySelectorAll('[data-line]').length === 400") }
 
         // The editor drives: its line 300 goes to the top of both panels.
+        controller.textView.layoutManager!.ensureLayout(for: controller.textView.textContainer!)
+        controller.textView.sizeToFit()
         let lineStart = controller.textView.lineIndex.start(ofLine: 300)
         let glyph = controller.textView.layoutManager!.glyphIndexForCharacter(at: lineStart)
         let top = controller.textView.layoutManager!.lineFragmentRect(forGlyphAt: glyph, effectiveRange: nil).minY + controller.textView.textContainerOrigin.y

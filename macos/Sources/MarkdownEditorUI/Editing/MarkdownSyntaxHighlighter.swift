@@ -24,8 +24,6 @@ enum MarkdownSyntaxHighlighter {
         try! NSRegularExpression(pattern: pattern, options: [.anchorsMatchLines])
     }
 
-    private static let fenceOpen = regex(#"^\s{0,3}(```|~~~)"#)
-    private static let fenceClose = regex(#"^\s{0,3}(```|~~~)\s*$"#)
     private static let lineRules: [(NSRegularExpression, MarkdownSyntaxStyle)] = [
         (regex(#"^\s{0,3}#{1,6}(\s.*)?$"#), .heading),
         (regex(#"^\s{0,3}>.*$"#), .quote),
@@ -47,8 +45,8 @@ enum MarkdownSyntaxHighlighter {
             let isHighlighted = line >= lines.lowerBound
             if insideFence {
                 if isHighlighted, range.length > 0 { spans.append(Span(range: range, style: .code)) }
-                if fenceClose.firstMatch(in: text as String, range: range) != nil { insideFence = false }
-            } else if fenceOpen.firstMatch(in: text as String, range: range) != nil {
+                if isFence(range, of: text, closing: true) { insideFence = false }
+            } else if isFence(range, of: text, closing: false) {
                 insideFence = true
                 if isHighlighted { spans.append(Span(range: range, style: .code)) }
             } else if isHighlighted {
@@ -61,6 +59,25 @@ enum MarkdownSyntaxHighlighter {
     static func spans(in text: String) -> [Span] {
         let lineIndex = LineIndex(text as NSString)
         return spans(forLines: 0..<lineIndex.lineCount, of: text as NSString, lineIndex: lineIndex)
+    }
+
+    /// A line starting, after at most three blanks, with ``` or ~~~; a closing fence has nothing else but blanks.
+    /// Checked without a regular expression: every line before the highlighted ones goes through it.
+    private static func isFence(_ range: NSRange, of text: NSString, closing: Bool) -> Bool {
+        func isBlank(_ character: unichar) -> Bool { character == 0x20 || character == 0x09 }
+        var index = range.location
+        let end = NSMaxRange(range)
+        while index < end, index - range.location < 3, isBlank(text.character(at: index)) { index += 1 }
+        guard index + 3 <= end else { return false }
+        let marker = text.character(at: index)
+        guard marker == 0x60 || marker == 0x7E, text.character(at: index + 1) == marker, text.character(at: index + 2) == marker else { return false }
+        guard closing else { return true }
+        index += 3
+        while index < end {
+            if !isBlank(text.character(at: index)) { return false }
+            index += 1
+        }
+        return true
     }
 
     /// The leftmost match wins (the first rule when several match there), then matching resumes after it.

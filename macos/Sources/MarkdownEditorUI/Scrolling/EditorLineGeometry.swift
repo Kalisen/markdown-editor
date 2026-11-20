@@ -7,6 +7,17 @@ struct EditorLineGeometry {
     let scrollView: NSScrollView
     let lineIndex: LineIndex
 
+    /// The text view lays out long documents progressively and grows as it goes; positions are only
+    /// meaningful against the whole document, so its layout is completed first (a no-op once done).
+    init(textView: NSTextView, scrollView: NSScrollView, lineIndex: LineIndex) {
+        self.textView = textView
+        self.scrollView = scrollView
+        self.lineIndex = lineIndex
+        if let layoutManager = textView.layoutManager, let container = textView.textContainer {
+            layoutManager.ensureLayout(for: container)
+        }
+    }
+
     var position: ScrollPosition {
         ScrollPosition(line: topLine, tail: ScrollTail.progress(offset: offset, maxOffset: maxOffset, viewport: viewport))
     }
@@ -20,7 +31,11 @@ struct EditorLineGeometry {
 
     private var viewport: CGFloat { scrollView.contentView.bounds.height }
 
-    private var documentHeight: CGFloat { textView.frame.height }
+    /// The height of the laid-out text with its insets (the view's frame may not have caught up yet).
+    private var documentHeight: CGFloat {
+        guard let layoutManager = textView.layoutManager, let container = textView.textContainer else { return textView.frame.height }
+        return max(textView.frame.height, layoutManager.usedRect(for: container).height + 2 * textView.textContainerInset.height)
+    }
 
     private var maxOffset: CGFloat { max(0, documentHeight - viewport) }
 
@@ -46,7 +61,9 @@ struct EditorLineGeometry {
     }
 
     /// The top of the source line in the document view; the document height past the last line.
+    /// The first line starts at the very top: the inset above it belongs to it.
     private func top(ofLine line: Int) -> CGFloat {
+        guard line > 0 else { return 0 }
         guard let layoutManager = textView.layoutManager, line < lineIndex.lineCount else { return documentHeight }
         let character = lineIndex.start(ofLine: line)
         let origin = textView.textContainerOrigin.y

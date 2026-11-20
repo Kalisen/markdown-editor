@@ -98,6 +98,11 @@ struct MarkdownSyntaxHighlighterTests {
         #expect(spans.map(\.style) == [.code, .code, .code, .code, .heading, .code, .code])
     }
 
+    @Test(arguments: [("```\ncode\n ``` \nafter", 3), ("   ~~~js\ncode\n```js\nstill code", 4), ("    ```\nnot a fence", 0), ("``\nnot a fence", 0)])
+    func fencesOpenWithThreeMarkersAndCloseOnAMarkerOnlyLine(text: String, codeLines: Int) {
+        #expect(MarkdownSyntaxHighlighter.spans(in: text).filter { $0.style == .code }.count == codeLines)
+    }
+
     @Test func highlightingARangeOfLinesKnowsTheFencesBeforeIt() {
         let text = "```\ncode\nmore *code*\n```\nafter *em*\n" as NSString
         let index = LineIndex(text)
@@ -125,6 +130,18 @@ struct MarkdownTextViewTests {
         #expect(!textView.isAutomaticTextReplacementEnabled)
         #expect(!textView.isAutomaticSpellingCorrectionEnabled)
         #expect(textView.font?.isFixedPitch == true)
+    }
+
+    @Test func newLineKeepsTheIndentationOfTheCurrentLine() {
+        let textView = MarkdownTextView.make()
+        textView.load("- a\n  - nested")
+        textView.setSelectedRange(NSRange(location: 14, length: 0))
+        textView.insertNewline(nil)
+        textView.insertText("- more", replacementRange: textView.selectedRange())
+        #expect(textView.string == "- a\n  - nested\n  - more")
+        textView.setSelectedRange(NSRange(location: 3, length: 0))
+        textView.insertNewline(nil)
+        #expect(textView.string == "- a\n\n  - nested\n  - more")
     }
 
     @Test func loadingTextIndexesItsLinesAndClearsUndo() {
@@ -161,5 +178,48 @@ struct AppDelegateTests {
     ] as [([String], String?)])
     func firstPlainCommandLineArgumentIsTheFileToOpen(arguments: [String], path: String?) {
         #expect(AppDelegate.fileArgument(arguments)?.path == path)
+    }
+}
+
+@MainActor
+struct EditorLineGeometryTests {
+    /// A long document in a scroll view, as in the editor window.
+    private func makeEditor(lines: Int) -> (MarkdownTextView, NSScrollView) {
+        let scrollView = NSScrollView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
+        let textView = MarkdownTextView.make()
+        textView.frame = NSRect(origin: .zero, size: scrollView.contentSize)
+        scrollView.documentView = textView
+        textView.load((0..<lines).map { "Line \($0)" }.joined(separator: "\n"))
+        return (textView, scrollView)
+    }
+
+    @Test func positionIsTheSourceLineAtTheTopAndRoundTrips() {
+        let (textView, scrollView) = makeEditor(lines: 2000)
+        let geometry = EditorLineGeometry(textView: textView, scrollView: scrollView, lineIndex: textView.lineIndex)
+        let offset = geometry.offset(for: ScrollPosition(line: 1000.5))
+        textView.scroll(NSPoint(x: 0, y: offset))
+        let position = EditorLineGeometry(textView: textView, scrollView: scrollView, lineIndex: textView.lineIndex).position
+        #expect(abs(position.line - 1000.5) < 0.05)
+        #expect(position.tail == 0)
+    }
+
+    @Test func aLongDocumentBeingLaidOutIsNotMistakenForItsEnd() {
+        let (textView, scrollView) = makeEditor(lines: 20000)
+        // The view is only as tall as the part of the text laid out so far, and is scrolled to the end of that part.
+        let laidOutHeight: CGFloat = 3000
+        textView.setFrameSize(NSSize(width: textView.frame.width, height: laidOutHeight))
+        textView.scroll(NSPoint(x: 0, y: laidOutHeight - scrollView.contentSize.height))
+        let position = EditorLineGeometry(textView: textView, scrollView: scrollView, lineIndex: textView.lineIndex).position
+        #expect(position.tail == 0)
+        #expect(position.line > 50 && position.line < 2000)
+    }
+
+    @Test func theLastViewportBlendsTowardTheEnd() {
+        let (textView, scrollView) = makeEditor(lines: 500)
+        let geometry = EditorLineGeometry(textView: textView, scrollView: scrollView, lineIndex: textView.lineIndex)
+        let end = geometry.offset(for: ScrollPosition(line: 0, tail: 1))
+        textView.scroll(NSPoint(x: 0, y: end))
+        #expect(EditorLineGeometry(textView: textView, scrollView: scrollView, lineIndex: textView.lineIndex).position.tail == 1)
+        #expect(geometry.offset(for: ScrollPosition(line: 0)) == 0)
     }
 }

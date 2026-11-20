@@ -74,6 +74,18 @@ final class MarkdownTextView: NSTextView {
         scheduleHighlight()
     }
 
+    /// A new line starts with the indentation of the line before it.
+    override func insertNewline(_ sender: Any?) {
+        let text = string as NSString
+        let caret = min(selectedRange().location, text.length)
+        let lineStart = lineIndex.start(ofLine: lineIndex.line(at: caret))
+        var indentEnd = lineStart
+        while indentEnd < caret, [0x20, 0x09].contains(text.character(at: indentEnd)) { indentEnd += 1 }
+        let indentation = text.substring(with: NSRange(location: lineStart, length: indentEnd - lineStart))
+        super.insertNewline(sender)
+        if !indentation.isEmpty { insertText(indentation, replacementRange: selectedRange()) }
+    }
+
     // MARK: Highlighting
 
     /// Highlights the visible lines on the next pass of the run loop (several requests are merged).
