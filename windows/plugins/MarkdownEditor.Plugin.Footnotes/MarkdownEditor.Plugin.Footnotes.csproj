@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\Plugin.targets" />
+  <ItemGroup>
+    <InternalsVisibleTo Include="MarkdownEditor.Plugin.Footnotes.Tests" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\shared\plugins\footnotes\assets\**" Link="assets\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

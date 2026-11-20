@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\Plugin.targets" />
+  <ItemGroup>
+    <InternalsVisibleTo Include="MarkdownEditor.Plugin.Graphviz.Tests" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\shared\plugins\graphviz\assets\**" Link="assets\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

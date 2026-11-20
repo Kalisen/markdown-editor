@@ -1,15 +1,20 @@
-name: CI
+name: CI (Windows)
 on:
   push:
     branches: [main]
+    paths: [windows/**, shared/**, .github/workflows/ci.yml]
   pull_request:
+    paths: [windows/**, shared/**, .github/workflows/ci.yml]
 jobs:
   build-test:
     runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: windows
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
         with:
-          global-json-file: global.json
+          global-json-file: windows/global.json
       - run: dotnet build MarkdownEditor.slnx -c Release
       - run: dotnet test --solution MarkdownEditor.slnx -c Release --no-build

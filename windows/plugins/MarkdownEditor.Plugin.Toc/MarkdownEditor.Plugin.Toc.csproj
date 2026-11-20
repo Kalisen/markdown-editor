@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\Plugin.targets" />
+  <ItemGroup>
+    <InternalsVisibleTo Include="MarkdownEditor.Plugin.Toc.Tests" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\shared\plugins\toc\assets\**" Link="assets\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>
