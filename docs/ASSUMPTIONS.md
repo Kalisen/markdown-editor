@@ -131,7 +131,7 @@ The editor shows one document, as on Windows: when several files are dropped or 
 
 ## PDF export uses the print system
 
-The PDF is produced by a print operation saving to a file: paginated on the default paper size, with the print styles (light colours). Images not yet loaded because they are off-screen are loaded first, waiting at most 5 seconds.
+The PDF is produced by a print operation saving to a file: paginated on the default paper size, with the print styles (light colours). Images not yet loaded because they are off-screen are loaded first, waiting at most 5 seconds. As on Windows, diagrams and highlighted code keep the colours of the preview theme: exported from a dark preview, they are drawn for a dark background.
 
 ## HTML export references pictures relative to the document
 
