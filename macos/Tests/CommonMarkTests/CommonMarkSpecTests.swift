@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import TestSupport
 @testable import CommonMark
 
 /// Runs every example of the CommonMark 0.31.2 specification against the strict pipeline.

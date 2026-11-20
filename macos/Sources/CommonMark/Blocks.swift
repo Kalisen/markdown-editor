@@ -11,11 +11,12 @@ public enum BlockContinuation {
 /// A block-level node. Subclasses define how the block continues over lines and what it may contain.
 open class Block: Node {
     /// First source line (0-based).
-    public internal(set) var startLine = 0
+    public var startLine = 0
     /// Last source line holding content of this block (0-based).
     public var endLine = 0
 
-    public internal(set) var isOpen = true
+    /// False once the block is closed; blocks built outside the parser close themselves.
+    public var isOpen = true
     var lastLineBlank = false
     var lastLineChecked = false
 

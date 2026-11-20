@@ -94,16 +94,13 @@ public final class Emphasis: Inline {
 }
 
 public final class Link: Inline {
-    /// The percent-encoded target.
+    /// The target as written (unescaped); it is percent-encoded when rendered.
     public var destination: String
     public var title: String?
-    /// True for `<https://…>` autolinks and links made from bare URLs.
-    public var isAutolink: Bool
 
-    public init(destination: String, title: String? = nil, isAutolink: Bool = false) {
+    public init(destination: String, title: String? = nil) {
         self.destination = destination
         self.title = title
-        self.isAutolink = isAutolink
     }
 
     public override func writeHTML(to renderer: HTMLRenderer) {
@@ -112,7 +109,7 @@ public final class Link: Inline {
             return
         }
         renderer.write("<a href=\"")
-        renderer.writeEscaped(destination)
+        renderer.writeEscaped(LinkDestination.normalize(destination))
         renderer.write("\"")
         renderer.writeAttributes(of: self)
         if let title, !title.isEmpty {
@@ -127,7 +124,7 @@ public final class Link: Inline {
 }
 
 public final class Image: Inline {
-    /// The percent-encoded source.
+    /// The source as written (unescaped); it is percent-encoded when rendered.
     public var destination: String
     public var title: String?
 
@@ -142,7 +139,7 @@ public final class Image: Inline {
             return
         }
         renderer.write("<img src=\"")
-        renderer.writeEscaped(destination)
+        renderer.writeEscaped(LinkDestination.normalize(destination))
         renderer.write("\"")
         renderer.writeAttributes(of: self)
         renderer.write(" alt=\"")

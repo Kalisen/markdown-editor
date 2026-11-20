@@ -128,8 +128,14 @@ public final class InlineParser {
     /// The scalar before the current position (a line feed at the start of the content).
     public var scalarBefore: Unicode.Scalar { subject.scalar(before: position) }
 
+    /// The byte at `index` of the subject, or nil past either end.
+    public func byte(at index: Int) -> UInt8? { subject.at(index) }
+
     /// The scalar at `index` (a line feed past the end of the content).
     public func scalar(at index: Int) -> Unicode.Scalar { subject.scalar(at: index) }
+
+    /// The scalar ending right before `index` (a line feed before the start of the content).
+    public func scalar(before index: Int) -> Unicode.Scalar { subject.scalar(before: index) }
 
     public func text(_ range: Range<Int>) -> String { subject.string(range) }
 
@@ -251,7 +257,7 @@ public final class InlineParser {
         let isEmail = InlineSyntax.isEmailAddress(inner)
         guard isEmail || InlineSyntax.isAbsoluteURI(inner) else { return false }
         let text = inner.string
-        let link = Link(destination: LinkDestination.normalize(isEmail ? "mailto:" + text : text), isAutolink: true)
+        let link = Link(destination: isEmail ? "mailto:" + text : text)
         link.appendChild(Text(text))
         append(link)
         position = end + 1
@@ -504,13 +510,13 @@ public final class InlineParser {
         }
     }
 
-    /// - Returns: the normalized destination, or nil when there is none at the current position.
+    /// - Returns: the unescaped destination, or nil when there is none at the current position.
     private func parseLinkDestination() -> String? {
         guard let end = InlineSyntax.linkDestinationEnd(subject, at: position) else { return nil }
         let isBracketed = peek() == Byte.lessThan
         let raw = isBracketed ? Array(subject[(position + 1)..<(end - 1)]) : Array(subject[position..<end])
         position = end
-        return LinkDestination.normalize(Unescaping.unescape(raw))
+        return Unescaping.unescape(raw)
     }
 
     private func parseLinkTitle() -> String? {
@@ -576,8 +582,7 @@ public final class InlineParser {
         let label = InlineSyntax.normalizeLabel(Array(content[0..<labelLength]))
         guard !label.isEmpty else { return 0 }
         if document.references[label] == nil {
-            document.references[label] = LinkReference(
-                destination: LinkDestination.normalize(Unescaping.unescape(rawDestination)), title: title)
+            document.references[label] = LinkReference(destination: Unescaping.unescape(rawDestination), title: title)
         }
         return position
     }
