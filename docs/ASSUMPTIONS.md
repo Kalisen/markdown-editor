@@ -88,3 +88,60 @@ PlantUML needs Java or a remote server (which would send document content off th
 ## [#78](https://github.com/Kalisen/markdown-editor/issues/78) Active extension detection
 
 Plugins opt in by implementing an optional IDocumentFeatureProbe contract that inspects the parsed document; plugins without a probe are never reported as active. Markdown is parsed once per render and the same syntax tree is used for HTML and detection.
+
+# macOS app
+
+Decisions made while porting the app to macOS.
+
+## Native Swift rewrite with its own Markdown engine
+
+The macOS app does not use .NET. No Swift library is both strict CommonMark 0.31.2 and extensible the way the plugins need (cmark-gfm follows GFM 0.29 and is extended in C), so `macos/Sources/CommonMark` implements the parser, validated by the 652 specification examples and compared with the Windows renderer on the specification examples and the repository's documents with all plugins enabled.
+
+## One repository, split into windows/, macos/ and shared/
+
+The preview script and stylesheet, the plugin assets (including the vendored bundles) and the specification examples are in `shared/` and used by both apps. The Windows solution, installer and tools moved under `windows/` unchanged. The Windows release workflow and installer script were updated for the new paths but not run.
+
+## Plugins are compiled into the macOS app
+
+There is no dynamic plugin loading on macOS: the 17 plugins are part of the app (`BundledPlugins`). A plugin can still fail to configure and be reported in Help > Plugins.
+
+## Preview served through the mdeditor:// scheme
+
+WKWebView cannot serve `https://` URLs from the app, so the preview uses a custom scheme with the same host names. The Content-Security-Policy lists the app origin and each plugin origin; the document origin is only allowed for images.
+
+## GFM task lists and strikethrough follow GitHub rather than Markdig
+
+A task list marker is only recognized at the start of a list item and followed by whitespace. Tilde runs match only when the opening and closing runs have the same length, and runs of three or more tildes are not strikethrough. The Windows app accepts `[x]` anywhere in an item and pairs runs of different lengths.
+
+## Front matter detection matches the Windows app
+
+As with Markdig, front matter is only recognized when a closing `---` or `...` line exists after the second line of the document; `---` directly followed by `---` is two thematic breaks.
+
+## Editor: NSTextView with TextKit 1, highlighting of visible lines only
+
+The editor uses the same highlighting rules and colours as the Windows editor, applied to the visible lines (plus a margin) after each change and scroll. Typing substitutions (smart quotes, dashes, text replacement, spelling correction) are off. New lines keep the indentation of the current line.
+
+## macOS conventions replace Windows ones
+
+Reload File is ⌘R (F5 on Windows). The window title is the document name with the standard edited mark and proxy icon. The unsaved-changes prompt is Save / Cancel / Don't Save. Dialogs are application-modal. Quitting when the window closes, and one document per window, are kept from the Windows app. An Edit menu with Find is added: macOS needs it for the standard editing shortcuts.
+
+## Opening several files opens the first one
+
+The editor shows one document, as on Windows: when several files are dropped or opened together, the first is opened.
+
+## PDF export uses the print system
+
+The PDF is produced by a print operation saving to a file: paginated on the default paper size, with the print styles (light colours). Images not yet loaded because they are off-screen are loaded first, waiting at most 5 seconds.
+
+## HTML export references pictures relative to the document
+
+Preview URLs (`mdeditor://doc.mdeditor.local/…`) do not exist outside the app, so the exported HTML uses the path relative to the document: pictures show when the export is saved beside the document.
+
+## Distribution: built and signed ad hoc on the Mac that runs it
+
+There is no Developer ID signature, notarization, installer nor release workflow for macOS. `build-app.sh --install` copies the app to /Applications and registers it under "Open With" for Markdown and text files without making it their default app. The app is not sandboxed. macOS 14 is the minimum version; only macOS 26 on Apple silicon was tested.
+
+## Emoji table and alert icons come from the Windows engine
+
+The shortcode table (1,603 entries) and the alert icons are generated from Markdig 1.6.0, so both apps render the same emoji and icons.
+

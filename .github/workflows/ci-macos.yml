@@ -1,0 +1,18 @@
+name: CI (macOS)
+on:
+  push:
+    branches: [main]
+    paths: [macos/**, shared/**, .github/workflows/ci-macos.yml]
+  pull_request:
+    paths: [macos/**, shared/**, .github/workflows/ci-macos.yml]
+jobs:
+  build-test:
+    runs-on: macos-15
+    defaults:
+      run:
+        working-directory: macos
+    steps:
+      - uses: actions/checkout@v4
+      - run: swift build --build-tests
+      - run: swift test --skip-build
+      - run: ./Scripts/build-app.sh
