@@ -263,6 +263,12 @@ struct ExportTests {
         #expect(!html.contains("<script"))
     }
 
+    @Test func picturesOfTheDocumentFolderAreReferencedRelativeToTheDocument() {
+        let snapshot = PreviewSnapshot(contentHTML: "<img src=\"mdeditor://doc.mdeditor.local/img/a.png\"><a href=\"mdeditor://doc.mdeditor.local/b.md\">b</a>", stylesheetURLs: [])
+        let html = HTMLExportBuilder.build(title: "t", snapshot: snapshot, theme: .dark) { _ in nil }
+        #expect(html.contains("<img src=\"img/a.png\"><a href=\"b.md\">b</a>"))
+    }
+
     @Test(arguments: [(ExportFormat.html, "html"), (.pdf, "pdf")])
     func exportFormatsHaveAFileExtension(format: ExportFormat, fileExtension: String) {
         #expect(format.fileExtension == fileExtension)

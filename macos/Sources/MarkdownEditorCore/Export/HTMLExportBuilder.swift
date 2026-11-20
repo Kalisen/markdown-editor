@@ -13,6 +13,8 @@ public struct PreviewSnapshot: Equatable {
 }
 
 /// Builds a single, script-free HTML file from a preview snapshot with its stylesheets inlined.
+/// Pictures of the document folder are referenced by their path relative to the document, so the export
+/// shows them when saved beside the document.
 public enum HTMLExportBuilder {
     /// - Parameter readStylesheet: returns the CSS text for a stylesheet URL, or nil if it cannot be resolved.
     public static func build(title: String, snapshot: PreviewSnapshot, theme: PreviewTheme, readStylesheet: (String) -> String?) -> String {
@@ -32,7 +34,7 @@ public enum HTMLExportBuilder {
             \(styles)</head>
             <body>
             <main id="\(PreviewPageBuilder.contentElementID)" class="markdown-body">
-            \(snapshot.contentHTML)
+            \(snapshot.contentHTML.replacingOccurrences(of: "=\"\(PreviewOrigins.documentOrigin)", with: "=\""))
             </main>
             </body>
             </html>

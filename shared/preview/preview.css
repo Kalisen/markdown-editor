@@ -6,7 +6,7 @@ body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.6 "Segoe
 a { color: var(--link); }
 h1, h2 { border-bottom: 1px solid var(--border); padding-bottom: .3em; }
 h1, h2, h3, h4, h5, h6 { margin: 1.5em 0 .5em; line-height: 1.25; }
-code, pre { font-family: "Cascadia Mono", Consolas, monospace; font-size: 85%; background: var(--code-bg); border-radius: 6px; }
+code, pre { font-family: "Cascadia Mono", Consolas, ui-monospace, Menlo, monospace; font-size: 85%; background: var(--code-bg); border-radius: 6px; }
 code { padding: .2em .4em; }
 pre { padding: 16px; overflow: auto; }
 pre code { padding: 0; background: none; font-size: 100%; }
@@ -21,5 +21,7 @@ th, td { border: 1px solid var(--border); padding: 6px 13px; }
   :root, html[data-theme="dark"] { --fg: #1f2328; --bg: #ffffff; --muted: #59636e; --border: #d1d9e0; --code-bg: #f6f8fa; --link: #0969da; }
   .markdown-body { max-width: none; padding: 0; }
   .markdown-body > * { content-visibility: visible; }
+  /* Keep code and table backgrounds when the engine does not print backgrounds by default (WebKit). */
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   pre, table, blockquote, img, svg { break-inside: avoid; }
 }
